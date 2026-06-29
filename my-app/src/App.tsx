@@ -1,12 +1,38 @@
-import React from 'react';
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-const App: React.FC = () => {
+import SplashScreen from './screens/SplashScreen'
+import LoginScreen from './screens/LoginScreen'
+import SignupScreen from './screens/SignupScreen'
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
+
+function AppRoutes() {
   return (
-    <div style={{ padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
-      <h1>💖 Hello from React + Vite + TypeScript!</h1>
-      <p>Welcome to your React-powered Electron application.</p>
-    </div>
-  );
-};
+    <Routes>
+      <Route path="/" element={<LoginScreen />} />
+      <Route path="/login" element={<LoginScreen />} />
+      <Route path="/signup" element={<SignupScreen />} />
+      <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+    </Routes>
+  )
+}
 
-export default App;
+function App() {
+  const [showSplash, setShowSplash] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  return (
+    <BrowserRouter>
+      {showSplash ? <SplashScreen /> : <AppRoutes />}
+    </BrowserRouter>
+  )
+}
+
+export default App

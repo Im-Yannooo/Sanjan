@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Electron builder cache
+.webpack/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Electron packager output
+release/
