@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sanjan</title>
+  <link rel="stylesheet" href="../styles/shared.css" />
+  <style>
+    .screen {
+      justify-content: center;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* ── Splash centre piece ── */
+    /* splash stays dark — override shared cream bg */
+    .screen { background: #2c2a22 !important; }
+
+    .splash-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      z-index: 1;
+    }
+
+    /* Animated logo mark — breathes on loop */
+    .splash-logo-mark {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #6b4fa0 0%, #9b7fd4 100%);
+      border-radius: 22px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 48px rgba(107,79,160,0.30);
+      animation: splashPulse 2.4s ease-in-out infinite;
+    }
+    .splash-logo-mark svg { width: 40px; height: 40px; }
+
+    @keyframes splashPulse {
+      0%, 100% { transform: scale(1);    box-shadow: 0 0 40px rgba(107,79,160,0.25); }
+      50%       { transform: scale(1.05); box-shadow: 0 0 64px rgba(107,79,160,0.45); }
+    }
+
+    .splash-title {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: #f0ebe0;
+      animation: fadeUp 0.6s 0.3s cubic-bezier(0.4,0,0.2,1) both;
+    }
+    .splash-title span { color: #9b7fd4; }
+
+    .splash-tagline {
+      font-size: 13px;
+      color: #9c9080;
+      letter-spacing: 0.3px;
+      animation: fadeUp 0.6s 0.5s cubic-bezier(0.4,0,0.2,1) both;
+    }
+
+    /* ── Progress bar ── */
+    .splash-progress {
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent) 0%, #9b7fd4 100%);
+      border-radius: 99px;
+      transition: width 0.04s linear;
+    }
+
+    .splash-version {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.4px;
+    }
+
+    /* ── Floating particles ── */
+    .particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .particle {
+      position: absolute;
+      width: 3px; height: 3px;
+      background: var(--accent);
+      border-radius: 50%;
+      opacity: 0;
+      animation: floatParticle var(--dur) var(--delay) ease-in-out infinite;
+    }
+    @keyframes floatParticle {
+      0%   { opacity: 0;    transform: translateY(0) scale(0.8); }
+      20%  { opacity: 0.45; }
+      80%  { opacity: 0.2;  }
+      100% { opacity: 0;    transform: translateY(-120px) scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <div class="drag-region"></div>
+    <div class="orb orb-top"></div>
+    <div class="orb orb-bottom"></div>
+
+    <!-- Floating particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Centre -->
+    <div class="splash-center animate-fade-up">
+      <div class="splash-logo-mark">
+        <!-- Zettelkasten-inspired node icon -->
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="10" r="4" fill="white" opacity="0.9"/>
+          <circle cx="10" cy="28" r="4" fill="white" opacity="0.9"/>
+          <circle cx="30" cy="28" r="4" fill="white" opacity="0.9"/>
+          <line x1="20" y1="14" x2="10" y2="24" stroke="white" stroke-width="1.8" stroke-opacity="0.6"/>
+          <line x1="20" y1="14" x2="30" y2="24" stroke="white" stroke-width="1.8" stroke-opacity="0.6"/>
+          <line x1="14"  y1="28" x2="26" y2="28" stroke="white" stroke-width="1.8" stroke-opacity="0.4"/>
+          <circle cx="20" cy="10" r="2" fill="white"/>
+          <circle cx="10" cy="28" r="2" fill="white"/>
+          <circle cx="30" cy="28" r="2" fill="white"/>
+        </svg>
+      </div>
+
+      <div>
+        <div class="splash-title">San<span>jan</span></div>
+        <div class="splash-tagline">Your AI-powered knowledge graph</div>
+      </div>
+    </div>
+
+    <!-- Bottom progress -->
+    <div class="splash-progress">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="splash-version">v 1.0.0 — Summer 2026</div>
+    </div>
+  </div>
+
+  <script>
+    // ── Particles ──────────────────────────────────────────
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.cssText = `
+        left: ${10 + Math.random() * 80}%;
+        bottom: ${Math.random() * 50}%;
+        --dur: ${3 + Math.random() * 4}s;
+        --delay: ${Math.random() * 4}s;
+        opacity: 0;
+      `;
+      container.appendChild(p);
+    }
+
+    // ── Progress bar → navigate to login ──────────────────
+    const fill = document.getElementById('progressFill');
+    let pct = 0;
+    const interval = setInterval(() => {
+      pct += 1;
+      fill.style.width = pct + '%';
+      if (pct >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          if (window.electron) window.electron.navigate('login');
+        }, 300);
+      }
+    }, 28); // ~2.8 s total
+  </script>
+</body>
+</html>
