@@ -1,0 +1,157 @@
+/* ==========================================
+   MainScreen.css – Obsidian-style layout
+   Color palette from login.css:
+     Beige bg:   #ece7d7
+     Sidebar:    #d7cfbe
+     Brown:      #5a4633
+     Dark text:  #3b332b
+     Muted text: #4d4e55
+     Border:     #b8b0a0
+   ========================================== */
+
+.main-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background-color: #ece7d7;
+  color: #3b332b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ── Sidebar ────────────────────────────── */
+
+.main-sidebar {
+  width: 260px;
+  background-color: #d7cfbe;
+  border-right: 1px solid #b8b0a0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: 16px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #5a4633;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #b8b0a0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-content {
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.sidebar-folder {
+  padding: 6px 8px;
+  font-size: 14px;
+  color: #4d4e55;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.folder-icon {
+  margin-right: 6px;
+  font-size: 12px;
+}
+
+.sidebar-file {
+  padding: 6px 8px 6px 24px;
+  font-size: 14px;
+  color: #5a4633;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-file:hover {
+  background-color: rgba(90, 70, 51, 0.08);
+}
+
+.sidebar-file.active {
+  background-color: rgba(90, 70, 51, 0.15);
+  color: #5a4633;
+  font-weight: 600;
+}
+
+/* ── Main Editor Area ───────────────────── */
+
+.main-editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── Note Editor (textarea) ─────────────── */
+
+.note-editor {
+  flex: 1;
+  width: 100%;
+  padding: 40px 60px;
+  background-color: #ece7d7;
+  color: #3b332b;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 15px;
+  line-height: 1.7;
+  tab-size: 4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+}
+
+.note-editor::placeholder {
+  color: #b8b0a0;
+  font-style: italic;
+}
+
+.note-editor:focus {
+  outline: none;
+}
+
+/* Scrollbar styling for the editor */
+.note-editor::-webkit-scrollbar {
+  width: 8px;
+}
+
+.note-editor::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.note-editor::-webkit-scrollbar-thumb {
+  background: #b8b0a0;
+  border-radius: 4px;
+}
+
+.note-editor::-webkit-scrollbar-thumb:hover {
+  background: #5a4633;
+}
+
+/* Empty state */
+.note-editor-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b8b0a0;
+  font-size: 16px;
+  padding: 40px;
+  text-align: center;
+}
