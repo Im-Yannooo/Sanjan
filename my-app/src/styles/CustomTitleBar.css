@@ -1,0 +1,164 @@
+.title-bar {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  background: #1c1c1c;
+  border-bottom: 1px solid #2c2c2c;
+  -webkit-app-region: drag;
+  padding: 0 6px;
+  gap: 6px;
+}
+
+.title-bar-left {
+  display: flex;
+  align-items: center;
+  -webkit-app-region: no-drag;
+}
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: #ededed;
+  border-radius: 4px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.icon-button:hover {
+  background: #2c2c2c;
+}
+
+.title-bar-tabs {
+  display: flex;
+  align-items: flex-end; /* Align tabs to the bottom */
+  height: 100%;
+  flex: 1;
+  overflow-x: auto;
+  -webkit-app-region: no-drag;
+  scrollbar-width: none; /* Hide scrollbar Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar IE */
+}
+
+/* Hide scrollbar Webkit */
+.title-bar-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.title-bar-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px; /* Chrome/Obsidian standard tab height */
+  padding: 0 12px;
+  margin: 0 2px -1px; /* Overlaps bottom border seamlessly */
+  background: transparent; /* Inactive tabs are transparent */
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.title-bar-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.title-bar-tab.active {
+  background: #ece7d7; /* Same as MainScreen.css background */
+  color: #3b332b;
+  border: 1px solid #2c2c2c;
+  border-bottom: 1px solid #ece7d7; /* Blends seamlessly into main screen bg */
+  font-weight: 500;
+  z-index: 2;
+}
+
+.tab-close {
+  opacity: 0.6;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.tab-close:hover {
+  opacity: 1;
+}
+
+.title-bar-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #121212;
+  border: 1px solid #2c2c2c;
+  border-radius: 6px;
+  padding: 4px 8px;
+  width: 180px;
+  color: #888;
+  -webkit-app-region: no-drag;
+}
+
+.title-bar-search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ededed;
+  font-size: 13px;
+  width: 100%;
+}
+
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.nav-buttons > button {
+  transition: background 0.2s ease;
+  background: transparent;
+  border: none;
+  height: 100%;
+  aspect-ratio: 1;
+  color: #ededed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-buttons > button:hover {
+  background: #2c2c2c;
+  cursor: pointer;
+}
+
+.nav-buttons > button:active {
+  background: #4c4c4c;
+}
+
+/* New tab button */
+.new-tab-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: #888;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 4px;
+  margin-bottom: 3px; /* Slightly align with tab height */
+  -webkit-app-region: no-drag;
+}
+
+.new-tab-button:hover {
+  background: #2c2c2c;
+  color: #ededed;
+}
