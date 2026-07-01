@@ -8,7 +8,6 @@ const TitleBar: React.FC = () => {
   const [search, setSearch] = useState('');
   const location = useLocation();
 
-  // Hide sidebar icon, search, bookmarks, and tabs on auth pages
   const isAuthPage = ['/', '/login', '/signup', '/forgot-password'].includes(location.pathname);
 
   const handleToggleSidebar = () => {
