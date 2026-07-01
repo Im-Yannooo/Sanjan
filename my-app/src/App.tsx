@@ -8,7 +8,7 @@ import LoginScreen from './screens/LoginScreen'
 import SignupScreen from './screens/SignupScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import MainScreen from './screens/MainScreen'
-import ObsidianFeaturesScreen from './screens/ObsidianFeaturesScreen'
+import GraphView from './components/GraphView'
 
 function AppRoutes() {
   return (
@@ -18,7 +18,7 @@ function AppRoutes() {
       <Route path="/signup" element={<SignupScreen />} />
       <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
       <Route path="/MainScreen" element={<MainScreen />} />
-      <Route path="/ObsidianFeaturesScreen" element={<ObsidianFeaturesScreen />} />
+      <Route path="/GraphView" element={<GraphView />} />
     </Routes>
   )
 }
@@ -48,4 +48,4 @@ function App() {
   )
 }
 
-export default App
+export default App

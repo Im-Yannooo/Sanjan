@@ -31,7 +31,7 @@ function LoginScreen() {
           </a>
         </div>
 
-        <button className="login-button" onClick={() => navigate('/ObsidianFeaturesScreen')}>
+        <button className="login-button" onClick={() => navigate('/MainScreen')}>
           Sign In
         </button>
 
