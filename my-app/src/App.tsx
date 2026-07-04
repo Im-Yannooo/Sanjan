@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import { TabProvider } from './context/TabContext'
+
 import TitleBar from './components/CustomTitleBar'
+import GraphView from './components/GraphView'
+
 import SplashScreen from './screens/SplashScreen'
 import LoginScreen from './screens/LoginScreen'
 import SignupScreen from './screens/SignupScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import MainScreen from './screens/MainScreen'
-import GraphView from './components/GraphView'
+import SettingsScreen from './screens/SettingsScreen'
 
 function AppRoutes() {
   return (
@@ -17,8 +20,10 @@ function AppRoutes() {
       <Route path="/login" element={<LoginScreen />} />
       <Route path="/signup" element={<SignupScreen />} />
       <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+
       <Route path="/MainScreen" element={<MainScreen />} />
       <Route path="/GraphView" element={<GraphView />} />
+      <Route path="/settings" element={<SettingsScreen />} />
     </Routes>
   )
 }
@@ -37,12 +42,31 @@ function App() {
   return (
     <BrowserRouter>
       <TabProvider>
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh'
+          }}
+        >
+
           <TitleBar />
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            {showSplash ? <SplashScreen /> : <AppRoutes />}
+
+          <div
+            style={{
+              flex: 1,
+              overflow: 'hidden'
+            }}
+          >
+            {showSplash
+              ? <SplashScreen />
+              : <AppRoutes />
+            }
           </div>
+
         </div>
+
       </TabProvider>
     </BrowserRouter>
   )
