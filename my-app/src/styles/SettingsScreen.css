@@ -1,0 +1,109 @@
+.settings-container {
+  height: 100vh;
+  padding: 40px;
+  background: #ece7d7;
+  overflow-y: auto;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.settings-header h1 {
+  color: #5a4633;
+  margin-bottom: 4px;
+}
+
+.settings-header p {
+  color: #7a7268;
+}
+
+.back-button {
+  border: none;
+  background: #5a4633;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  opacity: 0.9;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(320px, 1fr)
+  );
+  gap: 20px;
+}
+
+.settings-card {
+  background: #f8f5ec;
+  border: 1px solid #d4ccb8;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.settings-card h2 {
+  color: #5a4633;
+  margin-bottom: 16px;
+}
+
+.settings-card label {
+  display: block;
+  margin-bottom: 6px;
+  color: #3b332b;
+}
+
+.settings-card input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 14px;
+
+  border: 1px solid #b8b0a0;
+  border-radius: 8px;
+
+  background: white;
+  color: #3b332b;
+}
+
+.settings-card input:focus {
+  outline: none;
+  border-color: #5a4633;
+}
+
+.save-btn {
+  border: none;
+  background: #5a4633;
+  color: white;
+
+  padding: 10px 16px;
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+.save-btn:hover {
+  opacity: 0.9;
+}
+
+.danger-btn {
+  border: none;
+  background: #a83b3b;
+  color: white;
+
+  padding: 10px 16px;
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+.danger-btn:hover {
+  opacity: 0.9;
+}

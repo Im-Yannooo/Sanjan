@@ -29,8 +29,11 @@ function SignupScreen() {
           </label>
         </div>
 
-        <button className="login-button">
-          Sign Up
+        <button
+            className="login-button"
+            onClick={() => navigate('/MainScreen')}
+          >
+            Sign Up
         </button>
 
         <p className="signup-text">
