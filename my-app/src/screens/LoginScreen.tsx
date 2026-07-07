@@ -1,8 +1,46 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../styles/login.css'
 
 function LoginScreen() {
   const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleLogin = async () => {
+    setError('')
+    setLoading(true)
+
+    try {
+      const response = await fetch('http://localhost:5123/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.message || 'Login failed')
+        return
+      }
+
+      localStorage.setItem('accessToken', data.accessToken)
+      localStorage.setItem('userId', data.userId)
+      localStorage.setItem('email', data.email)
+
+      navigate('/MainScreen')
+
+    } catch (err) {
+      setError('Cannot connect to server. Make sure the backend is running.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="login-container">
@@ -17,8 +55,26 @@ function LoginScreen() {
           Sign in to continue building your knowledge network.
         </p>
 
-        <input type="text" placeholder="Email or Username" className="login-input" />
-        <input type="password" placeholder="Password" className="login-input" />
+        <input
+          type="text"
+          placeholder="Email or Username"
+          className="login-input"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          className="login-input"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        {error && (
+          <p style={{ color: 'red', fontSize: '14px', marginTop: '8px' }}>
+            {error}
+          </p>
+        )}
 
         <div className="login-options">
           <label>
@@ -31,8 +87,12 @@ function LoginScreen() {
           </a>
         </div>
 
-        <button className="login-button" onClick={() => navigate('/MainScreen')}>
-          Sign In
+        <button
+          className="login-button"
+          onClick={handleLogin}
+          disabled={loading}
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
         </button>
 
         <p className="signup-text">
@@ -46,7 +106,6 @@ function LoginScreen() {
 
       <div className="login-right">
         <div className="graph-container">
-
           <div className="node node1"></div>
           <div className="node node2"></div>
           <div className="node node3"></div>
@@ -57,7 +116,6 @@ function LoginScreen() {
           <div className="line line2"></div>
           <div className="line line3"></div>
           <div className="line line4"></div>
-
         </div>
 
         <h2>Connect Ideas</h2>
