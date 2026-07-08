@@ -124,7 +124,6 @@ const ObsidianFeaturesScreen: React.FC = () => {
           </div>
 
           <div style={styles.graphMockup}>
-            {/* Simple CSS-based Graph Mockup */}
             <div style={{...styles.node, top: '20%', left: '30%'}}></div>
             <div style={{...styles.node, top: '50%', left: '50%', width: '12px', height: '12px', backgroundColor: '#5a4633'}}></div>
             <div style={{...styles.node, top: '70%', left: '40%'}}></div>

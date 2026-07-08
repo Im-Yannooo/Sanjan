@@ -1,0 +1,337 @@
+/* ── Setup Screen — Obsidian-style vault picker ── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.setup-screen {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #1e1e1e;
+  color: #e0ddd5;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── Left panel — Branding ── */
+
+.setup-left {
+  width: 260px;
+  min-width: 260px;
+  background: linear-gradient(165deg, #2a2016 0%, #1a1510 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.setup-left::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(90, 70, 51, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.setup-left::after {
+  content: '';
+  position: absolute;
+  bottom: -60px;
+  left: -60px;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(90, 70, 51, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.setup-logo {
+  font-size: 36px;
+  font-weight: 700;
+  color: #d7cfbe;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.setup-tagline {
+  font-size: 13px;
+  color: #8a8070;
+  text-align: center;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Right panel — Quick Start ── */
+
+.setup-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 40px 32px;
+  background: #252525;
+  position: relative;
+}
+
+.setup-heading {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e8e4dc;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+}
+
+.setup-subtitle {
+  font-size: 13px;
+  color: #7a756c;
+  margin-bottom: 28px;
+}
+
+/* ── Action cards ── */
+
+.setup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.setup-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  background: #2c2c2c;
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.setup-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(90, 70, 51, 0.08) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.setup-card:hover {
+  border-color: #5a4633;
+  background: #303030;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.setup-card:hover::before {
+  opacity: 1;
+}
+
+.setup-card:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.setup-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.setup-card-icon.create {
+  background: linear-gradient(135deg, #5a4633 0%, #3d2e1f 100%);
+  color: #d7cfbe;
+}
+
+.setup-card-icon.open {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  color: #a09888;
+}
+
+.setup-card-info {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.setup-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e8e4dc;
+  margin-bottom: 3px;
+}
+
+.setup-card-desc {
+  font-size: 12px;
+  color: #7a756c;
+  line-height: 1.4;
+}
+
+.setup-card-arrow {
+  font-size: 16px;
+  color: #555;
+  transition: color 0.2s ease, transform 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.setup-card:hover .setup-card-arrow {
+  color: #d7cfbe;
+  transform: translateX(2px);
+}
+
+/* ── Selected vault path indicator ── */
+
+.setup-vault-path {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #2a2520;
+  border: 1px solid #3d3428;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideUp 0.25s ease;
+}
+
+.setup-vault-path-icon {
+  color: #5a4633;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.setup-vault-path-text {
+  font-size: 12px;
+  color: #a09888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.setup-vault-path-text strong {
+  color: #d7cfbe;
+  font-weight: 500;
+}
+
+/* ── Name input ── */
+
+.setup-name-input-group {
+  margin-top: 14px;
+  animation: slideUp 0.25s ease;
+}
+
+.setup-name-label {
+  font-size: 12px;
+  color: #7a756c;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.setup-name-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #2c2c2c;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #e8e4dc;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.setup-name-input:focus {
+  border-color: #5a4633;
+}
+
+.setup-name-input::placeholder {
+  color: #555;
+}
+
+/* ── Create button ── */
+
+.setup-create-btn {
+  margin-top: 14px;
+  width: 100%;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #5a4633 0%, #4a3828 100%);
+  border: 1px solid #6b5540;
+  border-radius: 8px;
+  color: #e8e4dc;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: slideUp 0.25s ease;
+}
+
+.setup-create-btn:hover {
+  background: linear-gradient(135deg, #6b5540 0%, #5a4633 100%);
+  box-shadow: 0 4px 16px rgba(90, 70, 51, 0.3);
+  transform: translateY(-1px);
+}
+
+.setup-create-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(90, 70, 51, 0.2);
+}
+
+.setup-create-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Footer ── */
+
+.setup-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.setup-footer-icon {
+  color: #555;
+  font-size: 14px;
+}
+
+.setup-footer-text {
+  font-size: 11px;
+  color: #555;
+}
+
+/* ── Animations ── */
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -12,5 +12,6 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "jsx": "react-jsx"
-  }
+  },
+  "include": ["src/main.ts", "src/preload.ts", "forge.env.d.ts"]
 }

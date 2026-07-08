@@ -1,32 +1,57 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
+
+const configPath = path.join(app.getPath("userData"), "config.json");
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
 
+function createConfigIfNeeded() {
+  if (!fs.existsSync(configPath)) {
+    fs.writeFileSync(
+      configPath,
+      JSON.stringify(
+        {
+          vaultPath: null
+        },
+        null,
+        2
+      )
+    );
+  }
+}
+
+interface Config {
+  vaultPath: string | null;
+}
+
+function readConfig(): Config {
+  createConfigIfNeeded();
+
+  return JSON.parse(
+    fs.readFileSync(configPath, "utf8")
+  ) as Config;
+}
+
+function writeConfig(config: Config): void {
+  fs.writeFileSync(
+    configPath,
+    JSON.stringify(config, null, 2)
+  );
+}
+
 let mainWindow: BrowserWindow | null = null;
 let maximizeToggle = false; // toggle back to original window size if maximize is clicked again
 
-const WELCOME_CONTENT = `# Welcome to Sanjan Workspace
-
-This is SANJAN, giving you a powerful, local-first, and highly customizable note-taking experience.
-
-Key Features
-
-Graph View
-Visualize the connections between your notes. Understand relationships at a glance.
-
-Local First
-Your data is stored locally on your device as plain markdown files.
-
-Markdown Editor
-Write distraction-free with a powerful, real-time markdown editor.
-
-Start typing to edit this note, or create a new tab with the + button above!
+const WELCOME_CONTENT = `
+Welcome
+This is your new vault
+Make a note of something, [[create a link to your note]]
+When you're ready, delete this note and make the vault your own
 `;
 
 const createWindow = () => {
@@ -49,7 +74,7 @@ const createWindow = () => {
     );
   }
 
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -75,9 +100,49 @@ ipcMain.on('manualClose', () => {
   app.quit();
 });
 
+ipcMain.on('window:setSetupSize', () => {
+  if (!mainWindow) return;
+
+  mainWindow.setResizable(false);
+  mainWindow.setSize(760, 440);
+  mainWindow.center();
+});
+
+ipcMain.handle('dialog:openFolder', async () => {
+  if (!mainWindow) return null;
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'createDirectory'],
+    title: 'Choose a folder for your vault',
+  });
+
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
+});
+
+ipcMain.on('window:setLoginSize', () => {
+  if (!mainWindow) return;
+
+  mainWindow.setResizable(false);
+  mainWindow.setSize(1020, 600);
+  mainWindow.center();
+});
+
+ipcMain.on('window:setMainSize', () => {
+  if (!mainWindow) return;
+
+  mainWindow.setResizable(true);
+  mainWindow.setSize(1020, 600);
+  mainWindow.center();
+});
+
 // --- Local Vault IPC handlers ---
 const getVaultPath = () => {
-  const vaultPath = path.join(app.getAppPath(), 'vault');
+  const config = readConfig();
+  const vaultPath = config.vaultPath;
+  if (!vaultPath) {
+    throw new Error("Vault path is not configured");
+  }
   if (!fs.existsSync(vaultPath)) {
     fs.mkdirSync(vaultPath, { recursive: true });
   }
@@ -132,8 +197,38 @@ ipcMain.handle('vault:deleteNote', async (event, title: string) => {
     fs.unlinkSync(filePath);
   }
 });
+// --- Local Vault IPC handlers --- End
 
-app.on('ready', createWindow);
+// --- File Management Vault
+ipcMain.handle('config:get', () => {
+  return readConfig();
+});
+
+ipcMain.handle('config:setVault', (_, vaultPath: string) => {
+  const config = readConfig();
+  config.vaultPath = vaultPath;
+  writeConfig(config);
+
+  // Actually create the directory on disk
+  if (!fs.existsSync(vaultPath)) {
+    fs.mkdirSync(vaultPath, { recursive: true });
+  }
+
+  // Create default Welcome.md if the vault is brand new/empty
+  const welcomeFile = path.join(vaultPath, 'Welcome.md');
+  if (!fs.existsSync(welcomeFile)) {
+    fs.writeFileSync(welcomeFile, WELCOME_CONTENT, 'utf8');
+  }
+});
+
+// The code below is for developing version
+// app.on('ready', createWindow);
+
+// The code below is for production version
+app.on('ready', () => {
+  createConfigIfNeeded();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

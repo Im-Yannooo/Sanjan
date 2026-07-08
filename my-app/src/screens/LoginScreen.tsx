@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../styles/login.css'
 
@@ -8,6 +8,27 @@ function LoginScreen() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken')
+    const lastActive = localStorage.getItem('lastActive')
+    
+    if (token && lastActive) {
+      const daysSinceActive = (Date.now() - parseInt(lastActive)) / (1000 * 60 * 60 * 24)
+      
+      // If active within the last 7 days, auto-login
+      if (daysSinceActive < 7) {
+        localStorage.setItem('lastActive', Date.now().toString()) // update activity
+        navigate('/splash')
+      } else {
+        // Session expired due to inactivity
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('lastActive')
+        localStorage.removeItem('userId')
+        localStorage.removeItem('email')
+      }
+    }
+  }, [navigate])
 
   const handleLogin = async () => {
     setError('')
@@ -32,8 +53,9 @@ function LoginScreen() {
       localStorage.setItem('accessToken', data.accessToken)
       localStorage.setItem('userId', data.userId)
       localStorage.setItem('email', data.email)
+      localStorage.setItem('lastActive', Date.now().toString())
 
-      navigate('/MainScreen')
+      navigate('/splash')
 
     } catch (err) {
       setError('Cannot connect to server. Make sure the backend is running.')

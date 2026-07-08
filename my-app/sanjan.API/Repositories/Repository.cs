@@ -5,36 +5,36 @@ namespace Sanjan.API.Repositories
 {
     public class Repository<T> : IRepository<T> where T : class
     {
-        protected readonly SanjanDbContext _context;
-        private readonly DbSet<T> _dbSet;
+        protected readonly SanjanDbContext context;
+        private readonly DbSet<T> dbSet;
 
-        public Repository(SanjanDbContext context)
+        public Repository(SanjanDbContext dbContext)
         {
-            _context = context;
-            _dbSet = context.Set<T>();
+            context = dbContext;
+            dbSet = dbContext.Set<T>();
         }
 
         public async Task<IEnumerable<T>> GetAllAsync()
         {
-            return await _dbSet.ToListAsync();
+            return await dbSet.ToListAsync();
         }
 
         public async Task<T?> GetByIdAsync(Guid id)
         {
-            return await _dbSet.FindAsync(id);
+            return await dbSet.FindAsync(id);
         }
 
         public async Task<T> CreateAsync(T entity)
         {
-            await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
+            await dbSet.AddAsync(entity);
+            await context.SaveChangesAsync();
             return entity;
         }
 
         public async Task<T> UpdateAsync(T entity)
         {
-            _dbSet.Update(entity);
-            await _context.SaveChangesAsync();
+            dbSet.Update(entity);
+            await context.SaveChangesAsync();
             return entity;
         }
 
@@ -43,8 +43,8 @@ namespace Sanjan.API.Repositories
             var entity = await GetByIdAsync(id);
             if (entity != null)
             {
-                _dbSet.Remove(entity);
-                await _context.SaveChangesAsync();
+                dbSet.Remove(entity);
+                await context.SaveChangesAsync();
             }
         }
     }

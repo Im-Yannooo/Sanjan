@@ -90,17 +90,17 @@ const TitleBar: React.FC = () => {
 
       {/* Window controls */}
       <div className="nav-buttons">
-        <button onClick={() => window.electronAPI?.minimize?.()} title="Minimize">
+        <button onClick={() => window.electronAPI?.window?.minimize?.()} title="Minimize">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.2" />
           </svg>
         </button>
-        <button onClick={() => window.electronAPI?.maximize?.()} title="Maximize">
+        <button onClick={() => window.electronAPI?.window?.maximize?.()} title="Maximize">
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
             <rect x="1" y="1" width="9" height="9" stroke="currentColor" strokeWidth="1.2" />
           </svg>
         </button>
-        <button onClick={() => window.electronAPI?.close?.()} title="Close">
+        <button onClick={() => window.electronAPI?.window?.close?.()} title="Close">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" strokeWidth="1.2" />
             <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" strokeWidth="1.2" />

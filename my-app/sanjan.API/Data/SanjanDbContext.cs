@@ -18,7 +18,7 @@ namespace Sanjan.API.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(u => u.UserId);
-                entity.Property(u => u.UserId).HasDefaultValueSql("uuid_generate_v4()");
+                entity.Property(u => u.UserId).HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
                 entity.HasIndex(u => u.Email).IsUnique();
                 entity.Property(u => u.PasswordHash).IsRequired().HasMaxLength(255);
@@ -31,7 +31,7 @@ namespace Sanjan.API.Data
             modelBuilder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(r => r.TokenId);
-                entity.Property(r => r.TokenId).HasDefaultValueSql("uuid_generate_v4()");
+                entity.Property(r => r.TokenId).HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(r => r.TokenHash).IsRequired().HasMaxLength(255);
                 entity.Property(r => r.IssuedAt).HasDefaultValueSql("now()");
 
@@ -49,7 +49,7 @@ namespace Sanjan.API.Data
             modelBuilder.Entity<AiLog>(entity =>
             {
                 entity.HasKey(a => a.LogId);
-                entity.Property(a => a.LogId).HasDefaultValueSql("uuid_generate_v4()");
+                entity.Property(a => a.LogId).HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(a => a.FeatureType).HasConversion<string>();
                 entity.Property(a => a.Status).HasConversion<string>();
                 entity.Property(a => a.RetryCount).HasDefaultValue((short)0);

@@ -388,15 +388,11 @@ const GraphView: React.FC = () => {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Adjust pans so zoom is focused on mouse cursor
     setPanX(mouseX - (mouseX - panX) * (clampedScale / zoomScale));
     setPanY(mouseY - (mouseY - panY) * (clampedScale / zoomScale));
     setZoomScale(clampedScale);
   };
 
-  // Opens the note AND navigates back to MainScreen — openNote alone only updates
-  // activeTabId in context, it doesn't leave the /graph route, which is why the
-  // screen previously appeared to do nothing on double-click.
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getGraphCoords(e.clientX, e.clientY);
 
@@ -409,12 +405,12 @@ const GraphView: React.FC = () => {
 
     if (clickedNode) {
       openNote(clickedNode.id);
-      navigate('/MainScreen'); // adjust to your actual MainScreen route if it isn't '/'
+      navigate('/MainScreen');
     }
   };
 
   const handleBack = () => {
-    navigate('/MainScreen'); // adjust to your actual MainScreen route if it isn't '/'
+    navigate('/MainScreen'); 
   };
 
   return (

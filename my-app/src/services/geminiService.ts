@@ -191,9 +191,8 @@ export async function getGhostSuggestion(
   })
   if (candidates.length === 0) return null
 
-  const prompt = `ALREADY LINKED IN ACTIVE NOTE (do not suggest these): ${
-    alreadyLinked.length ? alreadyLinked.join(', ') : '(none)'
-  }
+  const prompt = `ALREADY LINKED IN ACTIVE NOTE (do not suggest these): ${alreadyLinked.length ? alreadyLinked.join(', ') : '(none)'
+    }
 
 ACTIVE NOTE CONTENT:
 """
