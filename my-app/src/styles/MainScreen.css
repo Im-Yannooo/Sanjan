@@ -179,6 +179,13 @@
 }
 
 /* ── Note Editor + Ghost Text Overlay ───── */
+.md-syntax-hidden {
+  visibility: hidden;
+}
+
+.md-heading {
+  font-weight: 700;
+}
 
 .editor-wrapper {
   position: relative;
@@ -209,8 +216,11 @@
   z-index: 1;
 }
 
-.ghost-overlay-typed {
+/* .ghost-overlay-typed {
   color: transparent;
+} */
+.ghost-overlay-typed {
+  color: #3b332b;             
 }
 
 .ghost-overlay-suggestion {
@@ -218,13 +228,26 @@
   font-style: italic;
 }
 
-.note-editor {
+/* .note-editor {
   position: relative;
   z-index: 2;
   height: 100%;
   width: 100%;
   background-color: transparent;
   color: #3b332b;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+} */
+ .note-editor {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  width: 100%;
+  background-color: transparent;
+  color: transparent;        
+  caret-color: #3b332b;      
   border: none;
   outline: none;
   resize: none;
@@ -255,6 +278,22 @@
 
 .note-editor::-webkit-scrollbar-thumb:hover {
   background: #5a4633;
+}
+
+.wikilink-highlight {
+  border-radius: 3px;
+  padding: 0 2px;
+  font-weight: 500;
+}
+
+.wikilink-highlight.exists {
+  color: #5a4633;
+  background-color: rgba(184, 176, 160, 0.35);
+}
+
+.wikilink-highlight.missing {
+  color: #a85c3b;
+  background-color: rgba(168, 92, 59, 0.12);
 }
 
 .ghost-hint {

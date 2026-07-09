@@ -12,6 +12,7 @@ const NoteEditor: React.FC = () => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const highlightRef = useRef<HTMLDivElement | null>(null);
 
   // Resync local draft whenever the active tab changes (switching tabs)
   useEffect(() => {
@@ -51,6 +52,42 @@ const NoteEditor: React.FC = () => {
   const handleLinkClick = (rawTarget: string) => {
     const target = rawTarget.split('|')[0].trim();
     openNote(target);
+  };
+
+  // Renders the draft with [[brackets]] hidden and link text highlighted,
+  // used as the highlight layer behind the transparent textarea.
+  const renderEditHighlight = (text: string) => {
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    WIKILINK_RE.lastIndex = 0;
+
+    while ((match = WIKILINK_RE.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+      const rawTarget = match[1];
+      const display = rawTarget.includes('|') ? rawTarget.split('|')[1] : rawTarget;
+      const exists = noteExists(rawTarget);
+      parts.push(
+        <span
+          key={match.index}
+          style={{
+            color: exists ? '#5a4633' : '#a85c3b',
+            backgroundColor: exists ? 'rgba(184,176,160,0.35)' : 'rgba(168,92,59,0.12)',
+            borderRadius: '3px',
+            fontWeight: 500,
+          }}
+        >
+          {display}
+        </span>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+    // Trailing newline so the overlay div's height matches the textarea exactly
+    parts.push('\n');
+    return parts;
   };
 
   // Very small markdown-ish renderer: headers, bold, italic, and wiki-links.
@@ -139,7 +176,7 @@ const NoteEditor: React.FC = () => {
         </div>
       </div>
 
-      {mode === 'edit' ? (
+      {/* {mode === 'edit' ? (
         <textarea
           ref={textareaRef}
           value={draft}
@@ -149,6 +186,30 @@ const NoteEditor: React.FC = () => {
           style={textareaStyle}
           spellCheck={false}
         />
+      ) : (
+        <div style={previewStyle}>{renderPreview(draft)}</div>
+      )} */}
+      {mode === 'edit' ? (
+        <div style={editorStackStyle}>
+          <div ref={highlightRef} style={highlightLayerStyle} aria-hidden="true">
+            {renderEditHighlight(draft)}
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={draft}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onScroll={(e) => {
+              if (highlightRef.current) {
+                highlightRef.current.scrollTop = e.currentTarget.scrollTop;
+                highlightRef.current.scrollLeft = e.currentTarget.scrollLeft;
+              }
+            }}
+            placeholder="Start writing... use [[Note Title]] to link to other notes"
+            style={textareaOverlayStyle}
+            spellCheck={false}
+          />
+        </div>
       ) : (
         <div style={previewStyle}>{renderPreview(draft)}</div>
       )}
@@ -239,6 +300,41 @@ const paragraphStyle: React.CSSProperties = {
   margin: '0.3em 0',
   fontSize: '14px',
   lineHeight: 1.6,
+};
+
+const editorStackStyle: React.CSSProperties = {
+  position: 'relative',
+  flex: 1,
+  width: '100%',
+};
+
+const sharedTextStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  margin: 0,
+  padding: '20px 24px',
+  fontSize: '14px',
+  lineHeight: 1.6,
+  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+  whiteSpace: 'pre-wrap',
+  wordWrap: 'break-word',
+  overflow: 'auto',
+};
+
+const highlightLayerStyle: React.CSSProperties = {
+  ...sharedTextStyle,
+  color: '#3b332b',
+  pointerEvents: 'none',
+};
+
+const textareaOverlayStyle: React.CSSProperties = {
+  ...sharedTextStyle,
+  resize: 'none',
+  border: 'none',
+  outline: 'none',
+  background: 'transparent',
+  color: 'transparent',
+  caretColor: '#3b332b',
 };
 
 export default NoteEditor;
