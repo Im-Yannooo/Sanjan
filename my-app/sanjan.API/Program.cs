@@ -27,6 +27,10 @@ builder.Services.AddDbContext<SanjanDbContext>(options =>
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddScoped<IAiLogService, AiLogService>();
+
+builder.Services.AddScoped<IVaultStatsService, VaultStatsService>();
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
