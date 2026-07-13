@@ -45,8 +45,36 @@ namespace Sanjan.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+        {
+            try
+            {
+                var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
+        {
+            try
+            {
+                await _authService.RevokeTokenAsync(request.RefreshToken);
+                return Ok(new { message = "Logged out successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 
     public record RegisterRequest(string Email, string Password, string? DisplayName);
     public record LoginRequest(string Email, string Password);
+    public record RefreshRequest(string RefreshToken);
 }

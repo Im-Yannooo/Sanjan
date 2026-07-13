@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Sanjan.API.Data;
 using Sanjan.API.Models;
@@ -56,8 +57,99 @@ namespace Sanjan.API.Services
             user.LastLoginAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            var token = GenerateJwtToken(user);
-            return token;
+            var accessToken = GenerateJwtToken(user);
+            var refreshToken = await GenerateRefreshTokenAsync(user.UserId);
+
+            return new AuthResult
+            {
+                AccessToken = accessToken.AccessToken,
+                RefreshToken = refreshToken,
+                Email = user.Email,
+                UserId = user.UserId,
+                ExpiresAt = accessToken.ExpiresAt
+            };
+        }
+
+        public async Task<AuthResult> RefreshTokenAsync(string refreshToken)
+        {
+            var tokenHash = HashToken(refreshToken);
+
+            var storedToken = await _context.RefreshTokens
+                .Include(r => r.User)
+                .FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
+
+            if (storedToken == null)
+                throw new Exception("Invalid refresh token.");
+
+            if (storedToken.RevokedAt != null)
+                throw new Exception("Refresh token has been revoked.");
+
+            if (storedToken.ExpiresAt < DateTime.UtcNow)
+                throw new Exception("Refresh token has expired.");
+
+            storedToken.RevokedAt = DateTime.UtcNow;
+
+            var newRefreshToken = await GenerateRefreshTokenAsync(storedToken.UserId);
+
+            var lastToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(r => r.TokenHash == HashToken(newRefreshToken));
+
+            if (lastToken != null)
+                storedToken.ReplacedByTokenId = lastToken.TokenId;
+
+            await _context.SaveChangesAsync();
+
+            var accessToken = GenerateJwtToken(storedToken.User);
+
+            return new AuthResult
+            {
+                AccessToken = accessToken.AccessToken,
+                RefreshToken = newRefreshToken,
+                Email = storedToken.User.Email,
+                UserId = storedToken.UserId,
+                ExpiresAt = accessToken.ExpiresAt
+            };
+        }
+
+        public async Task RevokeTokenAsync(string refreshToken)
+        {
+            var tokenHash = HashToken(refreshToken);
+
+            var storedToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
+
+            if (storedToken == null)
+                throw new Exception("Invalid refresh token.");
+
+            storedToken.RevokedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task<string> GenerateRefreshTokenAsync(Guid userId)
+        {
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            var rawToken = Convert.ToBase64String(randomBytes);
+
+            var refreshToken = new RefreshToken
+            {
+                UserId = userId,
+                TokenHash = HashToken(rawToken),
+                IssuedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            };
+
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
+
+            return rawToken;
+        }
+
+        private string HashToken(string token)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+            return Convert.ToBase64String(bytes);
         }
 
         private AuthResult GenerateJwtToken(User user)
