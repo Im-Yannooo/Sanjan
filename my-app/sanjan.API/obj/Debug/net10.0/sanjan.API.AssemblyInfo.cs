@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("sanjan.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4c6db957aca76d82886fbe4b8f5aeb89305714ba")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fa5a295bac688ef048f3960a9f1ff84ee9765e7b")]
 [assembly: System.Reflection.AssemblyProductAttribute("sanjan.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("sanjan.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

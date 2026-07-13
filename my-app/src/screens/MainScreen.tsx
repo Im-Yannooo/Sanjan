@@ -1,4 +1,5 @@
 // my-app/src/screens/MainScreen.tsx
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTabContext } from '../context/TabContext'
@@ -433,22 +434,45 @@ function MainScreen() {
           })}
         </div>
         <div className="sidebar-actions">
-          <button className="sidebar-action-btn" onClick={addTab} title="New note">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            New Note
-          </button>
-          <button
-            className="sidebar-action-btn"
-            onClick={() => navigate('/GraphView')}
-            title="Graph view"
+        <button
+          className="sidebar-action-btn"
+          onClick={addTab}
+          title="New note"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ marginRight: '4px' }}
           >
-            <FaCircleNodes size={12} style={{ marginRight: '4px' }} />
-            Graph
-          </button>
-        </div>
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          New Note
+        </button>
+
+        <button
+          className="sidebar-action-btn"
+          onClick={() => navigate('/GraphView')}
+          title="Graph View"
+        >
+          <FaCircleNodes size={12} style={{ marginRight: '4px' }} />
+          Graph
+        </button>
+
+        <button
+          className="sidebar-action-btn"
+          onClick={() => navigate('/settings')}
+          title="Settings"
+        >
+          ⚙ Settings
+        </button>
+      </div>
       </aside>
 
       {/* Right-click context menu */}
