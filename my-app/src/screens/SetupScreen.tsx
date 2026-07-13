@@ -43,7 +43,6 @@ function SetupScreen({ onVaultConfigured }: SetupScreenProps) {
 
   return (
     <div className="setup-screen">
-      {/* ── Left branding panel ── */}
       <div className="setup-left">
         <h1 className="setup-logo">SANJan</h1>
         <p className="setup-tagline">
@@ -52,7 +51,6 @@ function SetupScreen({ onVaultConfigured }: SetupScreenProps) {
         </p>
       </div>
 
-      {/* ── Right action panel ── */}
       <div className="setup-right">
         <h2 className="setup-heading">Quick Start</h2>
         <p className="setup-subtitle">
@@ -60,12 +58,10 @@ function SetupScreen({ onVaultConfigured }: SetupScreenProps) {
         </p>
 
         <div className="setup-actions">
-          {/* Create New Vault */}
           <div
             className="setup-card"
             onClick={handleCreateNew}
           >
-            <div className="setup-card-icon create">📝</div>
             <div className="setup-card-info">
               <div className="setup-card-title">Create new vault</div>
               <div className="setup-card-desc">
@@ -80,7 +76,6 @@ function SetupScreen({ onVaultConfigured }: SetupScreenProps) {
             className="setup-card"
             onClick={handleOpenExisting}
           >
-            <div className="setup-card-icon open">📂</div>
             <div className="setup-card-info">
               <div className="setup-card-title">Open folder as vault</div>
               <div className="setup-card-desc">
@@ -98,7 +93,6 @@ function SetupScreen({ onVaultConfigured }: SetupScreenProps) {
                 onClick={handleBrowseFolder}
                 style={{ borderColor: selectedPath ? '#5a4633' : undefined }}
               >
-                <div className="setup-card-icon open">📁</div>
                 <div className="setup-card-info">
                   <div className="setup-card-title">
                     {selectedPath ? 'Change location' : 'Choose location'}
@@ -112,7 +106,6 @@ function SetupScreen({ onVaultConfigured }: SetupScreenProps) {
 
               {selectedPath && (
                 <div className="setup-vault-path">
-                  <span className="setup-vault-path-icon">📍</span>
                   <span className="setup-vault-path-text">
                     <strong>{selectedPath}</strong>
                   </span>

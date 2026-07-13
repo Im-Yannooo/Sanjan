@@ -12,12 +12,13 @@ function LoginScreen() {
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
     const lastActive = localStorage.getItem('lastActive')
-    
-    if (token && lastActive) {
-      const daysSinceActive = (Date.now() - parseInt(lastActive)) / (1000 * 60 * 60 * 24)
+  
+  // For debugging
+  if (token && lastActive) {
+      const minutesSinceActive = (Date.now() - parseInt(lastActive)) / (1000 * 60)
       
-      // If active within the last 7 days, auto-login
-      if (daysSinceActive < 7) {
+      // DEBUG: 1 minute instead of 7 days
+      if (minutesSinceActive < 1) {
         localStorage.setItem('lastActive', Date.now().toString()) // update activity
         navigate('/splash')
       } else {
@@ -29,6 +30,22 @@ function LoginScreen() {
       }
     }
   }, [navigate])
+  //   if (token && lastActive) {
+  //     const daysSinceActive = (Date.now() - parseInt(lastActive)) / (1000 * 60 * 60 * 24)
+      
+  //     // If active within the last 7 days, auto-login
+  //     if (daysSinceActive < 7) {
+  //       localStorage.setItem('lastActive', Date.now().toString()) // update activity
+  //       navigate('/splash')
+  //     } else {
+  //       // Session expired due to inactivity
+  //       localStorage.removeItem('accessToken')
+  //       localStorage.removeItem('lastActive')
+  //       localStorage.removeItem('userId')
+  //       localStorage.removeItem('email')
+  //     }
+  //   }
+  // }, [navigate])
 
   const handleLogin = async () => {
     setError('')

@@ -3,6 +3,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
 
+import installExtension, { REDUX_DEVTOOLS } from 'electron-devtools-installer';
+
 const configPath = path.join(app.getPath("userData"), "config.json");
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -228,6 +230,12 @@ ipcMain.handle('config:setVault', (_, vaultPath: string) => {
 app.on('ready', () => {
   createConfigIfNeeded();
   createWindow();
+
+    if (!app.isPackaged) {
+    installExtension(REDUX_DEVTOOLS)
+      .then((ext) => console.log(`Added Extension: ${ext.name}`))
+      .catch((err) => console.log('An error occurred: ', err));
+  }
 });
 
 app.on('window-all-closed', () => {

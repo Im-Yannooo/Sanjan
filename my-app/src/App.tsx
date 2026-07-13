@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-
 import { TabProvider } from './context/TabContext'
+import { installExtension, REDUX_DEVTOOLS } from 'electron-devtools-installer'
 
 import TitleBar from './components/CustomTitleBar'
 import GraphView from './components/GraphView'
@@ -35,7 +35,7 @@ const SKIP_SETUP = false;
 
 function App() {
   const [vaultConfigured, setVaultConfigured] = useState<boolean | null>(null)
-
+  
   useEffect(() => {
     async function initialize() {
       if (SKIP_SETUP) {
