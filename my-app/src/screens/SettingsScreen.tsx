@@ -5,14 +5,12 @@ function SettingsScreen() {
   const navigate = useNavigate()
 
   const handleSignOut = () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to sign out?'
-    )
+    if (!window.confirm("Are you sure you want to sign out?")) return;
 
-    if (confirmed) {
-      navigate('/login')
-    }
-  }
+    localStorage.clear();
+
+    window.location.href = "/login";
+  };
 
   return (
     <div className="settings-container">
