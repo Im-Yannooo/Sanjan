@@ -73,7 +73,7 @@ function App() {
             height: '100vh'
           }}
         >
-          <TitleBar />
+         {/* <TitleBar /> */}
           <div
             style={{
               flex: 1,
