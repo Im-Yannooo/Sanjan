@@ -24,7 +24,7 @@ interface ContextMenuState {
 
 const HEADING_RE = /^(#{1,6})(\s+)/
 
-function renderLineWithMarkdown(line: string, noteTitles: Set<string>): React.ReactNode {
+function renderLineWithMarkdown(line: string, noteTitles: Set<string>, onWikiLinkClick?: (target: string) => void): React.ReactNode {
   const headingMatch = line.match(HEADING_RE)
 
   if (headingMatch) {
@@ -34,27 +34,27 @@ function renderLineWithMarkdown(line: string, noteTitles: Set<string>): React.Re
     return (
       <span className="md-heading">
         <span className="md-syntax-hidden">{hashes}{spacing}</span>
-        {renderWithWikiLinks(rest, noteTitles)}
+        {renderWithWikiLinks(rest, noteTitles, onWikiLinkClick)}
       </span>
     )
   }
 
-  return <>{renderWithWikiLinks(line, noteTitles)}</>
+  return <>{renderWithWikiLinks(line, noteTitles, onWikiLinkClick)}</>
 }
 
-function renderContentWithMarkdown(text: string, noteTitles: Set<string>): React.ReactNode {
+function renderContentWithMarkdown(text: string, noteTitles: Set<string>, onWikiLinkClick?: (target: string) => void): React.ReactNode {
   const lines = text.split('\n')
   return lines.map((line, i) => (
     <React.Fragment key={i}>
       {i > 0 && '\n'}
-      {renderLineWithMarkdown(line, noteTitles)}
+      {renderLineWithMarkdown(line, noteTitles, onWikiLinkClick)}
     </React.Fragment>
   ))
 }
 
 const WIKILINK_RE = /\[\[(.*?)\]\]/g
 
-function renderWithWikiLinks(text: string, noteTitles: Set<string>) {
+function renderWithWikiLinks(text: string, noteTitles: Set<string>, onWikiLinkClick?: (target: string) => void) {
   const parts: React.ReactNode[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -78,7 +78,14 @@ function renderWithWikiLinks(text: string, noteTitles: Set<string>) {
     const exists = noteTitles.has(formatted)
 
     parts.push(
-      <span key={match.index} className={`wikilink-highlight ${exists ? 'exists' : 'missing'}`}>
+      <span
+        key={match.index}
+        className={`wikilink-highlight ${exists ? 'exists' : 'missing'} wikilink-clickable`}
+        onClick={(e) => {
+          e.stopPropagation()
+          onWikiLinkClick?.(target)
+        }}
+      >
         {display}
       </span>,
     )
@@ -520,10 +527,10 @@ function MainScreen() {
         {activeTab ? (
           <div className="editor-wrapper">
             {/* Ghost text overlay — sits behind the transparent-background textarea. */}
-            <div className="ghost-overlay" ref={ghostOverlayRef} aria-hidden="true">
+            <div className="ghost-overlay" ref={ghostOverlayRef}>
               {/* <span className="ghost-overlay-typed">{activeTab.content}</span> */}
               {/* <span className="ghost-overlay-typed">{renderWithWikiLinks(activeTab.content, noteTitleSet)}</span> */}
-              <span className="ghost-overlay-typed">{renderContentWithMarkdown(activeTab.content, noteTitleSet)}</span>
+              <span className="ghost-overlay-typed">{renderContentWithMarkdown(activeTab.content, noteTitleSet, (target) => openNote(target))}</span>
               {ghostSuggestion && (
                 <span className="ghost-overlay-suggestion">{ghostSuggestion.insertText}</span>
               )}

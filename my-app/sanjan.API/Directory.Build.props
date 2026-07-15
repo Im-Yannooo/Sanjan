@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <BaseOutputPath>C:\Dev\sanjan.API\bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>C:\Dev\sanjan.API\obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

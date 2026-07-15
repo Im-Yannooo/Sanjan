@@ -213,7 +213,7 @@
   overflow: hidden;
   color: transparent;
   pointer-events: none;
-  z-index: 1;
+  z-index: 3;
 }
 
 /* .ghost-overlay-typed {
@@ -294,6 +294,17 @@
 .wikilink-highlight.missing {
   color: #a85c3b;
   background-color: rgba(168, 92, 59, 0.12);
+}
+
+.wikilink-clickable {
+  pointer-events: auto;
+  cursor: pointer;
+  transition: text-decoration 0.15s ease, filter 0.15s ease;
+}
+
+.wikilink-clickable:hover {
+  text-decoration: underline;
+  filter: brightness(0.85);
 }
 
 .ghost-hint {
