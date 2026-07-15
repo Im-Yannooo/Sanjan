@@ -205,7 +205,12 @@
   white-space: pre-wrap;
   word-wrap: break-word;
   box-sizing: border-box;
+  height: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+
+
 
 .ghost-overlay {
   position: absolute;
@@ -215,10 +220,13 @@
   pointer-events: none;
   z-index: 3;
 }
-
-/* .ghost-overlay-typed {
+.ghost-overlay {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.ghost-overlay-typed {
   color: transparent;
-} */
+}
 .ghost-overlay-typed {
   color: #3b332b;             
 }

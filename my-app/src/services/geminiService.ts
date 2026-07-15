@@ -125,6 +125,37 @@ function safeParseJson<T>(raw: string | undefined, fallback: T): T {
   }
 }
 
+async function reportErrorToBackend(featureType: string, err: unknown, prompt?: string) {
+  const errMsg = err instanceof Error ? err.message : String(err)
+  const isOutOfTokens =
+    errMsg.includes('429') ||
+    errMsg.toLowerCase().includes('quota') ||
+    errMsg.toLowerCase().includes('exhaust') ||
+    errMsg.toLowerCase().includes('rate') ||
+    errMsg.toLowerCase().includes('token')
+
+  if (isOutOfTokens) {
+    const userId = localStorage.getItem('userId') || '00000000-0000-0000-0000-000000000000'
+    try {
+      await fetch('http://localhost:5123/api/v1/ai/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          featureType,
+          status: 'RATE_LIMITED',
+          promptUsed: prompt ? prompt.slice(0, 1000) : null,
+          responseRaw: `[Token Exhaustion / Rate Limit]: ${errMsg}`,
+          retryCount: 0,
+          latencyMs: 0
+        })
+      })
+    } catch (logErr) {
+      console.error('Failed to log rate limit to C# backend:', logErr)
+    }
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // 1. Ghost Text — "Gap Finder"
 // ────────────────────────────────────────────────────────────────────────────
@@ -227,6 +258,7 @@ ${buildVaultContext(candidates)}`
       insertText: reason ? ` [[${noteTitle}]] because ${reason}` : ` [[${noteTitle}]]`,
     }
   } catch (err) {
+    await reportErrorToBackend('SEMANTIC_LINK', err, prompt)
     throw new GeminiServiceError('Failed to get ghost suggestion from Gemini.', err)
   }
 }
@@ -308,12 +340,92 @@ ${buildVaultContext(candidates)}`
     const parsed = safeParseJson<RawAnalyticsResponse>(response.text, { relatedNotes: [] })
     return parsed.relatedNotes ?? []
   } catch (err) {
+    await reportErrorToBackend('SEMANTIC_LINK', err, prompt)
     throw new GeminiServiceError('Failed to fetch semantic analytics from Gemini.', err)
   }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 2b. Sidebar — Bridge Notes
+// 2b. Sidebar — Flashcard Quiz
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface Flashcard {
+  question: string
+  answer: string
+}
+
+const FLASHCARD_SYSTEM_INSTRUCTION = `You are the "Flashcard Generator" module inside Sanjan, a local-first markdown note app.
+Given the content of the user's active note, generate a set of flashcard-style quiz questions and answers that
+test the user's understanding of the key concepts, facts, and relationships in the note.
+
+Strict rules:
+- Generate between 3 and 8 flashcards depending on the note's length and density.
+- Questions should test recall and understanding, not just trivial details.
+- Answers should be concise — one or two sentences at most.
+- Cover the most important concepts in the note.
+- Output strict JSON only, matching the provided schema. No markdown fences, no commentary.`
+
+const flashcardSchema = {
+  type: Type.OBJECT,
+  properties: {
+    flashcards: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          question: { type: Type.STRING },
+          answer: { type: Type.STRING },
+        },
+        required: ['question', 'answer'],
+      },
+    },
+  },
+  required: ['flashcards'],
+}
+
+interface RawFlashcardResponse {
+  flashcards: Flashcard[]
+}
+
+export async function generateFlashcards(
+  activeContent: string,
+  activeTitle?: string,
+): Promise<Flashcard[]> {
+  const trimmed = activeContent.trim()
+  if (trimmed.length < 30) return []
+
+  const prompt = `NOTE TITLE: "${activeTitle ? normalizeTitle(activeTitle) : 'Untitled'}"
+
+NOTE CONTENT:
+"""
+${truncate(trimmed, 5000)}
+"""
+
+Generate flashcard quiz questions and answers based on this note.`
+
+  try {
+    const ai = getClient()
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: prompt,
+      config: {
+        systemInstruction: FLASHCARD_SYSTEM_INSTRUCTION,
+        responseMimeType: 'application/json',
+        responseSchema: flashcardSchema,
+        temperature: 0.4,
+      },
+    })
+
+    const parsed = safeParseJson<RawFlashcardResponse>(response.text, { flashcards: [] })
+    return parsed.flashcards ?? []
+  } catch (err) {
+    await reportErrorToBackend('STUDY_NOTE', err, prompt)
+    throw new GeminiServiceError('Failed to generate flashcards from Gemini.', err)
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 2c. Sidebar — Bridge Notes
 // ────────────────────────────────────────────────────────────────────────────
 
 const BRIDGE_NOTE_SYSTEM_INSTRUCTION = `You are the "Bridge Notes" module inside Sanjan. The user has selected
@@ -351,6 +463,7 @@ Write the bridge note now.`
     if (!text) throw new GeminiServiceError('Gemini returned an empty bridge note.')
     return text
   } catch (err) {
+    await reportErrorToBackend('BRIDGE_NOTE', err, prompt)
     if (err instanceof GeminiServiceError) throw err
     throw new GeminiServiceError('Failed to generate bridge note from Gemini.', err)
   }
@@ -418,6 +531,7 @@ export async function chatWithNote(
     if (!text) throw new GeminiServiceError('Gemini returned an empty chat response.')
     return text
   } catch (err) {
+    await reportErrorToBackend('STUDY_NOTE', err, userMessage)
     if (err instanceof GeminiServiceError) throw err
     throw new GeminiServiceError('Failed to get a chat response from Gemini.', err)
   }

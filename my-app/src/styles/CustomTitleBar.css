@@ -4,7 +4,7 @@
   height: 38px;
   background: #1c1c1c;
   border-bottom: 1px solid #2c2c2c;
-  -webkit-app-region: no-drag;
+  -webkit-app-region: drag;
   padding: 0 6px;
   gap: 6px;
 }
@@ -12,6 +12,7 @@
 .title-bar-left {
   display: flex;
   align-items: center;
+  gap: 4px;
   -webkit-app-region: no-drag;
 }
 
@@ -80,10 +81,23 @@
   z-index: 2;
 }
 
+.tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
 .tab-close {
-  opacity: 0.6;
+  opacity: 0;
   font-size: 14px;
   line-height: 1;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.title-bar-tab:hover .tab-close {
+  opacity: 0.6;
 }
 
 .tab-close:hover {

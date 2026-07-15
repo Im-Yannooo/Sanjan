@@ -26,9 +26,11 @@
     "sourceMap": true,
     "rootDir": ".",
     "outDir": "dist",
-    "moduleResolution": "node10",
-    "resolveJsonModule": true,
-    "ignoreDeprecations": "6.0"
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
-  "include": ["src/main.ts", "src/preload.ts", "forge.env.d.ts"]
+  "include": ["src/main.ts", "src/preload.ts", "forge.env.d.ts"],
+  "references": [
+    { "path": "./tsconfig.app.json" }
+  ]
 }

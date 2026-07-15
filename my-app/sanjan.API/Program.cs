@@ -8,6 +8,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDbContext<SanjanDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowElectron", policy =>
@@ -20,9 +23,6 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod();
     });
 });
-
-builder.Services.AddDbContext<SanjanDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -65,7 +65,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowElectron");
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

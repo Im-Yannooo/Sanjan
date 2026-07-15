@@ -49,6 +49,80 @@ const NoteEditor: React.FC = () => {
     updateTabContent(activeTab.id, draft);
   };
 
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardData = e.clipboardData;
+    if (!clipboardData) return;
+
+    let imageFile: File | null = null;
+
+    // 1. Try files list first (handles copying file from Windows Explorer/Finder)
+    if (clipboardData.files && clipboardData.files.length > 0) {
+      for (let i = 0; i < clipboardData.files.length; i++) {
+        const file = clipboardData.files[i];
+        if (file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(file.name)) {
+          imageFile = file;
+          break;
+        }
+      }
+    }
+
+    // 2. Try items list (handles screenshots/copied browser images/canvas data)
+    if (!imageFile && clipboardData.items && clipboardData.items.length > 0) {
+      for (let i = 0; i < clipboardData.items.length; i++) {
+        const item = clipboardData.items[i];
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          imageFile = item.getAsFile();
+          break;
+        }
+      }
+    }
+
+    if (imageFile && activeTab) {
+      e.preventDefault();
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const arrayBuffer = event.target?.result as ArrayBuffer;
+        if (!arrayBuffer) return;
+
+        // Extract extension or default to png
+        const originalName = imageFile!.name || 'image.png';
+        const ext = originalName.split('.').pop() || 'png';
+        const filename = `paste-${Date.now()}.${ext}`;
+
+        try {
+          const relativePath = `assets/${filename}`;
+          await window.electronAPI.vault.saveImage(relativePath, arrayBuffer);
+
+          const textarea = textareaRef.current;
+          if (!textarea) return;
+
+          const startPos = textarea.selectionStart;
+          const endPos = textarea.selectionEnd;
+          const currentContent = draft;
+
+          const imageTag = `\n![image](${relativePath})\n`;
+          const newContent =
+            currentContent.substring(0, startPos) +
+            imageTag +
+            currentContent.substring(endPos);
+
+          setDraft(newContent);
+          updateTabContent(activeTab.id, newContent);
+
+          // Delay setting cursor position slightly so that React finishes re-rendering the controlled value
+          setTimeout(() => {
+            textarea.focus();
+            textarea.selectionStart = startPos + imageTag.length;
+            textarea.selectionEnd = startPos + imageTag.length;
+          }, 50);
+        } catch (err) {
+          console.error('Failed to save pasted image:', err);
+        }
+      };
+      reader.readAsArrayBuffer(imageFile);
+    }
+  };
+
   const handleLinkClick = (rawTarget: string) => {
     const target = rawTarget.split('|')[0].trim();
     openNote(target);
@@ -67,8 +141,10 @@ const NoteEditor: React.FC = () => {
         parts.push(text.slice(lastIndex, match.index));
       }
       const rawTarget = match[1];
-      const display = rawTarget.includes('|') ? rawTarget.split('|')[1] : rawTarget;
-      const exists = noteExists(rawTarget);
+      const hasAlias = rawTarget.includes('|');
+      const targetPart = hasAlias ? rawTarget.split('|')[0] : rawTarget;
+      const aliasPart = hasAlias ? rawTarget.split('|')[1] : null;
+      const exists = noteExists(targetPart);
       parts.push(
         <span
           key={match.index}
@@ -79,7 +155,16 @@ const NoteEditor: React.FC = () => {
             fontWeight: 500,
           }}
         >
-          {display}
+          <span style={{ visibility: 'hidden' }}>[[</span>
+          {hasAlias ? (
+            <>
+              <span style={{ visibility: 'hidden' }}>{targetPart}|</span>
+              {aliasPart}
+            </>
+          ) : (
+            targetPart
+          )}
+          <span style={{ visibility: 'hidden' }}>]]</span>
         </span>
       );
       lastIndex = match.index + match[0].length;
@@ -96,6 +181,23 @@ const NoteEditor: React.FC = () => {
   const renderPreview = (text: string) => {
     const lines = text.split('\n');
     return lines.map((line, i) => {
+      // 1. Check if the line is purely an image tag
+      const imgMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+      if (imgMatch) {
+        const alt = imgMatch[1];
+        const src = imgMatch[2];
+        const fullSrc = src.startsWith('http') || src.startsWith('data:') ? src : `vault-file:///${src}`;
+        return (
+          <div key={i} style={{ margin: '12px 0' }}>
+            <img
+              src={fullSrc}
+              alt={alt}
+              style={{ maxWidth: '100%', maxHeight: '450px', borderRadius: '6px', border: '1px solid #b8b0a0', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+            />
+          </div>
+        );
+      }
+
       const parts: React.ReactNode[] = [];
       let lastIndex = 0;
       let match: RegExpExecArray | null;
@@ -199,6 +301,7 @@ const NoteEditor: React.FC = () => {
             value={draft}
             onChange={handleChange}
             onBlur={handleBlur}
+            onPaste={handlePaste}
             onScroll={(e) => {
               if (highlightRef.current) {
                 highlightRef.current.scrollTop = e.currentTarget.scrollTop;

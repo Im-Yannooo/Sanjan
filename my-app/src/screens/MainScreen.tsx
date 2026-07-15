@@ -7,14 +7,18 @@ import { FaCircleNodes } from 'react-icons/fa6'
 import '../styles/MainScreen.css'
 import {
   getGhostSuggestion,
-  getSemanticAnalytics,
+  generateFlashcards,
   generateBridgeNote,
   chatWithNote,
   type GhostSuggestion,
-  type RelatedNoteSuggestion,
+  type Flashcard,
   type ChatMessage,
   type VaultNote,
 } from '../services/geminiService'
+import FlashcardQuiz from '../components/FlashcardQuiz'
+import { renderContentWithMarkdown, stripMdExt } from '../hooks/markdownRenderer'
+import { useDebouncedCallback } from '../hooks/useDebouncedCallback'
+import { useWikiLinkAutoClose } from '../hooks/useWikiLinkAutoClose'
 
 interface ContextMenuState {
   x: number
@@ -22,110 +26,9 @@ interface ContextMenuState {
   title: string // note title (e.g. "Foo.md")
 }
 
-const HEADING_RE = /^(#{1,6})(\s+)/
-
-function renderLineWithMarkdown(line: string, noteTitles: Set<string>, onWikiLinkClick?: (target: string) => void): React.ReactNode {
-  const headingMatch = line.match(HEADING_RE)
-
-  if (headingMatch) {
-    const hashes = headingMatch[1]
-    const spacing = headingMatch[2]
-    const rest = line.slice(headingMatch[0].length)
-    return (
-      <span className="md-heading">
-        <span className="md-syntax-hidden">{hashes}{spacing}</span>
-        {renderWithWikiLinks(rest, noteTitles, onWikiLinkClick)}
-      </span>
-    )
-  }
-
-  return <>{renderWithWikiLinks(line, noteTitles, onWikiLinkClick)}</>
-}
-
-function renderContentWithMarkdown(text: string, noteTitles: Set<string>, onWikiLinkClick?: (target: string) => void): React.ReactNode {
-  const lines = text.split('\n')
-  return lines.map((line, i) => (
-    <React.Fragment key={i}>
-      {i > 0 && '\n'}
-      {renderLineWithMarkdown(line, noteTitles, onWikiLinkClick)}
-    </React.Fragment>
-  ))
-}
-
-const WIKILINK_RE = /\[\[(.*?)\]\]/g
-
-function renderWithWikiLinks(text: string, noteTitles: Set<string>, onWikiLinkClick?: (target: string) => void) {
-  const parts: React.ReactNode[] = []
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-  WIKILINK_RE.lastIndex = 0
-
-  while ((match = WIKILINK_RE.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index))
-    }
-    const rawTarget = match[1]
-
-    if (rawTarget.trim() === '') {
-      parts.push(match[0])
-      lastIndex = match.index + match[0].length
-      continue
-    }
-
-    const display = rawTarget.includes('|') ? rawTarget.split('|')[1] : rawTarget
-    const target = rawTarget.split('|')[0].trim()
-    const formatted = target.endsWith('.md') ? target : `${target}.md`
-    const exists = noteTitles.has(formatted)
-
-    parts.push(
-      <span
-        key={match.index}
-        className={`wikilink-highlight ${exists ? 'exists' : 'missing'} wikilink-clickable`}
-        onClick={(e) => {
-          e.stopPropagation()
-          onWikiLinkClick?.(target)
-        }}
-      >
-        {display}
-      </span>,
-    )
-    lastIndex = match.index + match[0].length
-  }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
-  return parts
-}
-
-type AIPanelTab = 'chat' | 'analytics' | 'bridge'
+type AIPanelTab = 'chat' | 'flashcards' | 'bridge'
 
 const GHOST_DEBOUNCE_MS = 800
-
-/** Small local debounce helper — avoids pulling in lodash just for this. */
-function useDebouncedCallback<Args extends unknown[]>(
-  callback: (...args: Args) => void,
-  delayMs: number,
-) {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const callbackRef = useRef(callback)
-  callbackRef.current = callback
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [])
-
-  return useCallback(
-    (...args: Args) => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      timeoutRef.current = setTimeout(() => callbackRef.current(...args), delayMs)
-    },
-    [delayMs],
-  )
-}
-
-function stripMdExt(title: string): string {
-  return title.endsWith('.md') ? title.slice(0, -3) : title
-}
 
 function MainScreen() {
   const navigate = useNavigate()
@@ -162,10 +65,10 @@ function MainScreen() {
   const [aiPanelOpen, setAIPanelOpen] = useState(false)
   const [aiPanelTab, setAIPanelTab] = useState<AIPanelTab>('chat')
 
-  // Analytics
-  const [relatedNotes, setRelatedNotes] = useState<RelatedNoteSuggestion[]>([])
-  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false)
-  const [analyticsError, setAnalyticsError] = useState<string | null>(null)
+  // Flashcards
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([])
+  const [isFlashcardsLoading, setIsFlashcardsLoading] = useState(false)
+  const [flashcardsError, setFlashcardsError] = useState<string | null>(null)
 
   // Bridge notes
   const [bridgeSelection, setBridgeSelection] = useState<Set<string>>(new Set())
@@ -179,6 +82,11 @@ function MainScreen() {
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
 
+  // ── Wikilink auto-close hook ──
+  const handleWikiLinkKey = useWikiLinkAutoClose((newContent) => {
+    if (activeTab) updateTabContent(activeTab.id, newContent)
+  })
+
   const noteTitleSet = useMemo(() => new Set(allNotes.map((n) => n.title)), [allNotes])
 
   const vaultNotes: VaultNote[] = useMemo(
@@ -189,8 +97,8 @@ function MainScreen() {
   // Reset per-note AI panel state whenever the active note changes.
   useEffect(() => {
     setGhostSuggestion(null)
-    setRelatedNotes([])
-    setAnalyticsError(null)
+    setFlashcards([])
+    setFlashcardsError(null)
     setChatMessages([])
     setChatError(null)
   }, [activeTabId])
@@ -254,6 +162,8 @@ function MainScreen() {
   }
 
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (handleWikiLinkKey(e)) return
+
     if (e.key === 'Tab' && ghostSuggestion && activeTab) {
       e.preventDefault()
       const accepted = ghostSuggestion.insertText
@@ -275,20 +185,93 @@ function MainScreen() {
     }
   }
 
-  // ── AI sidebar: Semantic Analytics ───────────────────────────────────────
-  const runSemanticAnalytics = useCallback(async () => {
-    if (!activeTab) return
-    setIsAnalyticsLoading(true)
-    setAnalyticsError(null)
-    try {
-      const results = await getSemanticAnalytics(activeTab.content, vaultNotes, activeTab.title)
-      setRelatedNotes(results)
-    } catch (err) {
-      setAnalyticsError(err instanceof Error ? err.message : 'Failed to load analytics.')
-    } finally {
-      setIsAnalyticsLoading(false)
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardData = e.clipboardData;
+    if (!clipboardData) return;
+
+    let imageFile: File | null = null;
+
+    // 1. Try files list first (handles copying file from Windows Explorer/Finder)
+    if (clipboardData.files && clipboardData.files.length > 0) {
+      for (let i = 0; i < clipboardData.files.length; i++) {
+        const file = clipboardData.files[i];
+        if (file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(file.name)) {
+          imageFile = file;
+          break;
+        }
+      }
     }
-  }, [activeTab, vaultNotes])
+
+    // 2. Try items list (handles screenshots/copied browser images/canvas data)
+    if (!imageFile && clipboardData.items && clipboardData.items.length > 0) {
+      for (let i = 0; i < clipboardData.items.length; i++) {
+        const item = clipboardData.items[i];
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          imageFile = item.getAsFile();
+          break;
+        }
+      }
+    }
+
+    if (imageFile && activeTab) {
+      e.preventDefault();
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const arrayBuffer = event.target?.result as ArrayBuffer;
+        if (!arrayBuffer) return;
+
+        // Extract extension or default to png
+        const originalName = imageFile!.name || 'image.png';
+        const ext = originalName.split('.').pop() || 'png';
+        const filename = `paste-${Date.now()}.${ext}`;
+
+        try {
+          const relativePath = `assets/${filename}`;
+          await window.electronAPI.vault.saveImage(relativePath, arrayBuffer);
+
+          const textarea = textareaRef.current;
+          if (!textarea) return;
+
+          const startPos = textarea.selectionStart;
+          const endPos = textarea.selectionEnd;
+          const currentContent = activeTab.content;
+
+          const imageTag = `\n![image](${relativePath})\n`;
+          const newContent =
+            currentContent.substring(0, startPos) +
+            imageTag +
+            currentContent.substring(endPos);
+
+          updateTabContent(activeTab.id, newContent);
+
+          // Delay setting cursor position slightly so that React finishes re-rendering the controlled value
+          setTimeout(() => {
+            textarea.focus();
+            textarea.selectionStart = startPos + imageTag.length;
+            textarea.selectionEnd = startPos + imageTag.length;
+          }, 50);
+        } catch (err) {
+          console.error('Failed to save pasted image:', err);
+        }
+      };
+      reader.readAsArrayBuffer(imageFile);
+    }
+  };
+
+  // ── AI sidebar: Flashcards ──────────────────────────────────────────────
+  const runGenerateFlashcards = useCallback(async () => {
+    if (!activeTab) return
+    setIsFlashcardsLoading(true)
+    setFlashcardsError(null)
+    try {
+      const cards = await generateFlashcards(activeTab.content, activeTab.title)
+      setFlashcards(cards)
+    } catch (err) {
+      setFlashcardsError(err instanceof Error ? err.message : 'Failed to generate flashcards.')
+    } finally {
+      setIsFlashcardsLoading(false)
+    }
+  }, [activeTab])
 
   // ── AI sidebar: Bridge Notes ──────────────────────────────────────────────
   const toggleBridgeSelection = (title: string) => {
@@ -441,45 +424,45 @@ function MainScreen() {
           })}
         </div>
         <div className="sidebar-actions">
-        <button
-          className="sidebar-action-btn"
-          onClick={addTab}
-          title="New note"
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ marginRight: '4px' }}
+          <button
+            className="sidebar-action-btn"
+            onClick={addTab}
+            title="New note"
           >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          New Note
-        </button>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ marginRight: '4px' }}
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            New Note
+          </button>
 
-        <button
-          className="sidebar-action-btn"
-          onClick={() => navigate('/GraphView')}
-          title="Graph View"
-        >
-          <FaCircleNodes size={12} style={{ marginRight: '4px' }} />
-          Graph
-        </button>
+          <button
+            className="sidebar-action-btn"
+            onClick={() => navigate('/GraphView')}
+            title="Graph View"
+          >
+            <FaCircleNodes size={12} style={{ marginRight: '4px' }} />
+            Graph
+          </button>
 
-        <button
-          className="sidebar-action-btn"
-          onClick={() => navigate('/settings')}
-          title="Settings"
-        >
-          ⚙ Settings
-        </button>
-      </div>
+          <button
+            className="sidebar-action-btn"
+            onClick={() => navigate('/settings')}
+            title="Settings"
+          >
+            ⚙ Settings
+          </button>
+        </div>
       </aside>
 
       {/* Right-click context menu */}
@@ -541,6 +524,7 @@ function MainScreen() {
               value={activeTab.content}
               onChange={handleEditorChange}
               onKeyDown={handleEditorKeyDown}
+              onPaste={handlePaste}
               onScroll={syncOverlayScroll}
               placeholder="Start typing your note here..."
               spellCheck={false}
@@ -571,13 +555,13 @@ function MainScreen() {
               Chat
             </button>
             <button
-              className={aiPanelTab === 'analytics' ? 'active' : ''}
+              className={aiPanelTab === 'flashcards' ? 'active' : ''}
               onClick={() => {
-                setAIPanelTab('analytics')
-                if (relatedNotes.length === 0 && !isAnalyticsLoading) runSemanticAnalytics()
+                setAIPanelTab('flashcards')
+                if (flashcards.length === 0 && !isFlashcardsLoading) runGenerateFlashcards()
               }}
             >
-              Analytics
+              Flashcards
             </button>
             <button
               className={aiPanelTab === 'bridge' ? 'active' : ''}
@@ -622,30 +606,14 @@ function MainScreen() {
               </div>
             )}
 
-            {aiPanelTab === 'analytics' && (
-              <div className="ai-analytics">
-                <div className="ai-analytics-header">
-                  <span>Unlinked but related notes</span>
-                  <button onClick={runSemanticAnalytics} disabled={isAnalyticsLoading}>
-                    {isAnalyticsLoading ? 'Scanning…' : 'Refresh'}
-                  </button>
-                </div>
-                {analyticsError && <p className="ai-error">{analyticsError}</p>}
-                {!isAnalyticsLoading && relatedNotes.length === 0 && !analyticsError && (
-                  <p className="ai-empty-hint">No strong unlinked matches found.</p>
-                )}
-                <ul className="ai-related-list">
-                  {relatedNotes.map((r) => (
-                    <li key={r.title}>
-                      <div className="ai-related-title">
-                        {r.title}
-                        <span className="ai-related-score">{Math.round(r.relevance * 100)}%</span>
-                      </div>
-                      <div className="ai-related-reason">{r.reason}</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {aiPanelTab === 'flashcards' && (
+              <FlashcardQuiz
+                cards={flashcards}
+                isLoading={isFlashcardsLoading}
+                error={flashcardsError}
+                onGenerate={runGenerateFlashcards}
+                noteTitle={stripMdExt(activeTab.title)}
+              />
             )}
 
             {aiPanelTab === 'bridge' && (
