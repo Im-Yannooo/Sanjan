@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol, net } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
@@ -6,6 +6,10 @@ import started from 'electron-squirrel-startup';
 import installExtension, { REDUX_DEVTOOLS } from 'electron-devtools-installer';
 
 const configPath = path.join(app.getPath("userData"), "config.json");
+
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'vault-file', privileges: { bypassCSP: true, secure: true, supportFetchAPI: true } }
+]);
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -199,6 +203,26 @@ ipcMain.handle('vault:deleteNote', async (event, title: string) => {
     fs.unlinkSync(filePath);
   }
 });
+
+ipcMain.handle('vault:saveImage', async (event, relativePath: string, data: ArrayBuffer) => {
+  const vaultPath = getVaultPath();
+  const filePath = path.join(vaultPath, relativePath);
+  
+  const dirPath = path.dirname(filePath);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+  
+  fs.writeFileSync(filePath, Buffer.from(data));
+});
+
+// ipcMain.handle('vault:getImageUrl', async (_event, relativePath: string) => {
+//   const vaultPath = getVaultPath();
+//   const filePath = path.join(vaultPath, relativePath);
+
+//   return `file://${filePath.replace(/\\/g, '/')}`;
+// });
+
 // --- Local Vault IPC handlers --- End
 
 // --- File Management Vault
@@ -229,6 +253,63 @@ ipcMain.handle('config:setVault', (_, vaultPath: string) => {
 // The code below is for production version
 app.on('ready', () => {
   createConfigIfNeeded();
+
+  protocol.handle("vault-file", async (request) => {
+  try {
+    const url = new URL(request.url);
+
+    const relativePath = path.join(
+      url.host,
+      decodeURIComponent(url.pathname)
+    );
+
+    const filePath = path.join(getVaultPath(), relativePath);
+
+    console.log("Request:", request.url);
+    console.log("Relative:", relativePath);
+    console.log("Full:", filePath);
+
+    if (!fs.existsSync(filePath)) {
+      console.error("File does not exist:", filePath);
+      return new Response("Not Found", { status: 404 });
+    }
+
+    return net.fetch(`file://${filePath}`);
+  } catch (err) {
+    console.error(err);
+    return new Response("Not Found", { status: 404 });
+  }
+});
+
+  // protocol.handle('vault-file', (request) => {
+  //   try {
+  //     const pathname = decodeURIComponent(new URL(request.url).pathname);
+  //     const relativePath = pathname.startsWith('/') ? pathname.slice(1) : pathname;
+  //     const filePath = path.join(getVaultPath(), relativePath);
+  //     if (fs.existsSync(filePath)) {
+  //       const ext = path.extname(filePath).toLowerCase();
+  //       const mimeTypes: Record<string, string> = {
+  //         '.png': 'image/png',
+  //         '.jpg': 'image/jpeg',
+  //         '.jpeg': 'image/jpeg',
+  //         '.gif': 'image/gif',
+  //         '.webp': 'image/webp',
+  //         '.svg': 'image/svg+xml'
+  //       };
+  //       const contentType = mimeTypes[ext] || 'application/octet-stream';
+  //       return new Response(fs.readFileSync(filePath), {
+  //         headers: {
+  //           'Content-Type': contentType,
+  //           'Access-Control-Allow-Origin': '*'
+  //         }
+  //       });
+  //     }
+  //   } catch (err) {
+  //     console.error('Failed to handle vault-file protocol:', err);
+  //   }
+  //   return new Response('Not Found', { status: 404 });
+  // });
+
   createWindow();
 
     if (!app.isPackaged) {

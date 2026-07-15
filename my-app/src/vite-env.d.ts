@@ -19,6 +19,7 @@ interface Window {
       saveNote: (title: string, content: string) => Promise<void>;
       renameNote: (oldTitle: string, newTitle: string) => Promise<void>;
       deleteNote: (title: string) => Promise<void>;
+      saveImage: (relativePath: string, data: ArrayBuffer) => Promise<void>;
     };
     config: {
       getConfig: () => Promise<{ vaultPath: string | null }>;

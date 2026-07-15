@@ -177,21 +177,22 @@ export const TabProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       delete diskTitlesRef.current[id];
 
       setTabs((prev) => {
+        const idx = prev.findIndex((t) => t.id === id);
         const filtered = prev.filter((t) => t.id !== id);
         if (filtered.length === 0) {
           setActiveTabId('');
           return [];
         }
+        // Compute fallback from the *current* tabs array (not the stale closure)
+        setActiveTabId((prevActive) => {
+          if (prevActive !== id) return prevActive;
+          const fallback = prev[idx - 1] || prev[idx + 1];
+          return fallback ? fallback.id : '';
+        });
         return filtered;
       });
-      setActiveTabId((prevActive) => {
-        if (prevActive !== id) return prevActive;
-        const idx = tabs.findIndex((t) => t.id === id);
-        const fallback = tabs[idx - 1] || tabs[idx + 1];
-        return fallback ? fallback.id : '';
-      });
     },
-    [tabs]
+    []
   );
 
   const updateTabContent = useCallback(

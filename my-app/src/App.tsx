@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { TabProvider } from './context/TabContext'
-import { installExtension, REDUX_DEVTOOLS } from 'electron-devtools-installer'
 
 import TitleBar from './components/CustomTitleBar'
 import GraphView from './components/GraphView'
@@ -73,7 +72,7 @@ function App() {
             height: '100vh'
           }}
         >
-         {/* <TitleBar /> */}
+          <TitleBar />
           <div
             style={{
               flex: 1,

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "node",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "strict": true,
@@ -10,7 +10,9 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "types": ["vite/client"],
-    "noEmit": true
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
   "include": ["src/**/*"],
   "exclude": ["src/main.ts", "src/preload.ts"]

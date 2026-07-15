@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveNote: (title: string, content: string) => ipcRenderer.invoke('vault:saveNote', title, content),
     renameNote: (oldTitle: string, newTitle: string) => ipcRenderer.invoke('vault:renameNote', oldTitle, newTitle),
     deleteNote: (title: string) => ipcRenderer.invoke('vault:deleteNote', title),
+    saveImage: (relativePath: string, data: ArrayBuffer) => ipcRenderer.invoke('vault:saveImage', relativePath, data),
   },
 
   config: {
