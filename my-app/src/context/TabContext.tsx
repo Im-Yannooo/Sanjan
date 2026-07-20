@@ -376,13 +376,36 @@ export const TabProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [tabs, closeTab]
   );
 
+  // const createNoteFromContent = useCallback(
+  //   async (title: string, content: string) => {
+  //     let formattedTitle = title.endsWith('.md') ? title : `${title}.md`;
+
+  //     // Avoid clobbering an existing note — append -1, -2, etc.
+  //     let count = 1;
+  //     const base = formattedTitle.slice(0, -3);
+  //     while (allNotes.some((n) => n.title === formattedTitle)) {
+  //       formattedTitle = `${base}-${count++}.md`;
+  //     }
+
+  //     await window.electronAPI.vault.saveNote(formattedTitle, content);
+
+  //     const newNote = { title: formattedTitle, content };
+  //     setAllNotes((prev) => [...prev, newNote]);
+
+  //     const id = String(Date.now());
+  //     setTabs((prev) => [...prev, { id, title: formattedTitle, content }]);
+  //     setActiveTabId(id);
+  //     diskTitlesRef.current[id] = formattedTitle;
+  //   },
+  //   [allNotes]
+  // );
   const createNoteFromContent = useCallback(
     async (title: string, content: string) => {
-      let formattedTitle = title.endsWith('.md') ? title : `${title}.md`;
+      const cleanTitle = sanitizeFilename(title) || 'Untitled';
+      let formattedTitle = `${cleanTitle}.md`;
 
-      // Avoid clobbering an existing note — append -1, -2, etc.
       let count = 1;
-      const base = formattedTitle.slice(0, -3);
+      const base = cleanTitle;
       while (allNotes.some((n) => n.title === formattedTitle)) {
         formattedTitle = `${base}-${count++}.md`;
       }
