@@ -23,6 +23,7 @@ interface TabContextValue {
   renameTab: (id: string, title: string) => void;
   renameNote: (oldTitle: string, newTitle: string) => void;
   deleteNote: (title: string) => void;
+  createNoteFromContent: (title: string, content: string) => Promise<void>;
 }
 
 const TabContext = createContext<TabContextValue | null>(null);
@@ -375,6 +376,30 @@ export const TabProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [tabs, closeTab]
   );
 
+  const createNoteFromContent = useCallback(
+    async (title: string, content: string) => {
+      let formattedTitle = title.endsWith('.md') ? title : `${title}.md`;
+
+      // Avoid clobbering an existing note — append -1, -2, etc.
+      let count = 1;
+      const base = formattedTitle.slice(0, -3);
+      while (allNotes.some((n) => n.title === formattedTitle)) {
+        formattedTitle = `${base}-${count++}.md`;
+      }
+
+      await window.electronAPI.vault.saveNote(formattedTitle, content);
+
+      const newNote = { title: formattedTitle, content };
+      setAllNotes((prev) => [...prev, newNote]);
+
+      const id = String(Date.now());
+      setTabs((prev) => [...prev, { id, title: formattedTitle, content }]);
+      setActiveTabId(id);
+      diskTitlesRef.current[id] = formattedTitle;
+    },
+    [allNotes]
+  );
+
   return (
     <TabContext.Provider
       value={{
@@ -389,6 +414,7 @@ export const TabProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         renameTab,
         renameNote,
         deleteNote,
+        createNoteFromContent,
       }}
     >
       {children}

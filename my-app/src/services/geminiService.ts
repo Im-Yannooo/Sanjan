@@ -53,7 +53,8 @@ export class GeminiServiceError extends Error {
 // Client setup
 // ────────────────────────────────────────────────────────────────────────────
 
-const MODEL_NAME = 'gemini-2.5-flash'
+//from 2.5-flash
+const MODEL_NAME = 'gemini-3.5-flash'
 
 let client: GoogleGenAI | null = null
 
@@ -61,6 +62,10 @@ function getClient(): GoogleGenAI {
   if (client) return client
 
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
+
+  console.log("Gemini API Key:", apiKey?.slice(0, 10))
+  console.log("Full key exists:", !!apiKey)
+
   if (!apiKey) {
     throw new GeminiServiceError(
       'VITE_GEMINI_API_KEY is not set. Add it to my-app/.env (and restart the Vite dev server).',
@@ -373,15 +378,28 @@ export interface Flashcard {
   answer: string
 }
 
+// const FLASHCARD_SYSTEM_INSTRUCTION = `You are the "Flashcard Generator" module inside Sanjan, a local-first markdown note app.
+// Given the content of the user's active note, generate a set of flashcard-style quiz questions and answers that
+// test the user's understanding of the key concepts, facts, and relationships in the note.
+
+// Strict rules:
+// - Generate between 3 and 8 flashcards depending on the note's length and density.
+// - Questions should test recall and understanding, not just trivial details.
+// - Answers should be concise — one or two sentences at most.
+// - Cover the most important concepts in the note.
+// - Output strict JSON only, matching the provided schema. No markdown fences, no commentary.`
+
 const FLASHCARD_SYSTEM_INSTRUCTION = `You are the "Flashcard Generator" module inside Sanjan, a local-first markdown note app.
 Given the content of the user's active note, generate a set of flashcard-style quiz questions and answers that
-test the user's understanding of the key concepts, facts, and relationships in the note.
+test the user's understanding of the key concepts, facts, and relationships in the note. If the active note
+links to other notes via [[Title]] syntax and their content is provided below, you may draw on that linked
+content too — especially if the active note references a concept only fully explained in a linked note.
 
 Strict rules:
-- Generate between 3 and 8 flashcards depending on the note's length and density.
+- Generate between 3 and 8 flashcards depending on the note's length and density (including linked content).
 - Questions should test recall and understanding, not just trivial details.
 - Answers should be concise — one or two sentences at most.
-- Cover the most important concepts in the note.
+- Cover the most important concepts in the note and any linked notes provided.
 - Output strict JSON only, matching the provided schema. No markdown fences, no commentary.`
 
 const flashcardSchema = {
@@ -409,18 +427,32 @@ interface RawFlashcardResponse {
 export async function generateFlashcards(
   activeContent: string,
   activeTitle?: string,
+  allNotes: VaultNote[] = [],
 ): Promise<Flashcard[]> {
   const trimmed = activeContent.trim()
   if (trimmed.length < 30) return []
+
+  const linkedTitles = extractLinkedTitles(activeContent)
+  const linkedNotes = allNotes.filter(
+    (n) =>
+      linkedTitles.includes(normalizeTitle(n.title)) &&
+      normalizeTitle(n.title) !== (activeTitle ? normalizeTitle(activeTitle) : ''),
+  )
+
+  const linkedBlock = linkedNotes.length
+    ? `\n\nLINKED NOTES (referenced via [[ ]] in the active note):\n${buildVaultContext(linkedNotes, 1500)}`
+    : ''
+
 
   const prompt = `NOTE TITLE: "${activeTitle ? normalizeTitle(activeTitle) : 'Untitled'}"
 
 NOTE CONTENT:
 """
 ${truncate(trimmed, 5000)}
-"""
+"""${linkedBlock}
 
-Generate flashcard quiz questions and answers based on this note.`
+Generate flashcard quiz questions and answers based on this note${linkedNotes.length ? ' and its linked notes' : ''}.`
+
 
   try {
     const ai = getClient()

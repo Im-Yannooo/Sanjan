@@ -43,6 +43,7 @@ function MainScreen() {
     updateTabContent,
     renameNote,
     deleteNote,
+    createNoteFromContent,
   } = useTabContext()
 
   const [ghostEnabled, setGhostEnabled] = useState(true);
@@ -269,19 +270,32 @@ function MainScreen() {
   };
 
   // ── AI sidebar: Flashcards ──────────────────────────────────────────────
+  // const runGenerateFlashcards = useCallback(async () => {
+  //   if (!activeTab) return
+  //   setIsFlashcardsLoading(true)
+  //   setFlashcardsError(null)
+  //   try {
+  //     const cards = await generateFlashcards(activeTab.content, activeTab.title)
+  //     setFlashcards(cards)
+  //   } catch (err) {
+  //     setFlashcardsError(err instanceof Error ? err.message : 'Failed to generate flashcards.')
+  //   } finally {
+  //     setIsFlashcardsLoading(false)
+  //   }
+  // }, [activeTab])
   const runGenerateFlashcards = useCallback(async () => {
-    if (!activeTab) return
-    setIsFlashcardsLoading(true)
-    setFlashcardsError(null)
-    try {
-      const cards = await generateFlashcards(activeTab.content, activeTab.title)
-      setFlashcards(cards)
-    } catch (err) {
-      setFlashcardsError(err instanceof Error ? err.message : 'Failed to generate flashcards.')
-    } finally {
-      setIsFlashcardsLoading(false)
-    }
-  }, [activeTab])
+  if (!activeTab) return
+  setIsFlashcardsLoading(true)
+  setFlashcardsError(null)
+  try {
+    const cards = await generateFlashcards(activeTab.content, activeTab.title, vaultNotes)
+    setFlashcards(cards)
+  } catch (err) {
+    setFlashcardsError(err instanceof Error ? err.message : 'Failed to generate flashcards.')
+  } finally {
+    setIsFlashcardsLoading(false)
+  }
+}, [activeTab, vaultNotes])
 
   // ── AI sidebar: Bridge Notes ──────────────────────────────────────────────
   const toggleBridgeSelection = (title: string) => {
@@ -690,18 +704,32 @@ function MainScreen() {
                 </button>
                 {bridgeError && <p className="ai-error">{bridgeError}</p>}
                 {bridgeResult && (
-                  <div className="ai-bridge-result">
-                    <textarea readOnly value={bridgeResult} />
-                    <button
-                      onClick={() => {
-                        // Hand the generated markdown to the user's normal save flow.
-                        // Replace with your own "create note" action from TabContext if available.
-                        navigator.clipboard.writeText(bridgeResult)
-                      }}
-                    >
-                      Copy Markdown
-                    </button>
-                  </div>
+                  // <div className="ai-bridge-result">
+                  //   <textarea readOnly value={bridgeResult} />
+                  //   <button
+                  //     onClick={() => {
+                  //       // Hand the generated markdown to the user's normal save flow.
+                  //       // Replace with your own "create note" action from TabContext if available.
+                  //       navigator.clipboard.writeText(bridgeResult)
+                  //     }}
+                  //   >
+                  //     Copy Markdown
+                  //   </button>
+                  // </div>
+                    <div className="ai-bridge-result">
+                      <textarea readOnly value={bridgeResult} />
+                      <button
+                        onClick={async () => {
+                          const headingMatch = bridgeResult.match(/^#\s+(.+)$/m)
+                          const title = headingMatch ? headingMatch[1].trim() : 'Bridge Note'
+                          await createNoteFromContent(title, bridgeResult)
+                          setBridgeResult(null)
+                          setBridgeSelection(new Set())
+                        }}
+                      >
+                        Save as Note
+                      </button>
+                    </div>
                 )}
               </div>
             )}
