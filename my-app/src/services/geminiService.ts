@@ -107,6 +107,25 @@ function buildVaultContext(notes: VaultNote[], maxCharsPerNote = 500): string {
     .join('\n\n')
 }
 
+
+/** Finds vault note titles mentioned in plain text (not just [[Title]] syntax),
+ *  matching whole-word, case-insensitive, so "what does Evolution say" resolves too. */
+function findMentionedTitles(text: string, candidateTitles: string[]): string[] {
+  const found = new Set<string>()
+  const lowerText = text.toLowerCase()
+  for (const title of candidateTitles) {
+    const t = title.trim()
+    if (!t) continue
+    // word-boundary match so "AI" doesn't match inside "Sail"
+    const pattern = new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+    if (pattern.test(text) || lowerText.includes(t.toLowerCase())) {
+      found.add(t)
+    }
+  }
+  return Array.from(found)
+}
+
+
 /** Parses a JSON response defensively — Gemini can occasionally wrap JSON in prose/fences. */
 function safeParseJson<T>(raw: string | undefined, fallback: T): T {
   if (!raw) return fallback
@@ -473,22 +492,118 @@ Write the bridge note now.`
 // 2c. Sidebar — Contextual Chat
 // ────────────────────────────────────────────────────────────────────────────
 
-const CHAT_SYSTEM_INSTRUCTION = `You are Sanjan's in-app note assistant. You are answering questions about ONE
-specific active note whose full content is provided below. Ground every answer in that note's content. If the
-user asks about something the note doesn't cover, say so plainly rather than inventing information. Keep
-answers concise and use markdown formatting sparingly (short lists are fine, avoid headings).`
+// const CHAT_SYSTEM_INSTRUCTION = `You are Sanjan's in-app note assistant. You are answering questions about ONE
+// specific active note whose full content is provided below. Ground every answer in that note's content. If the
+// user asks about something the note doesn't cover, say so plainly rather than inventing information. Keep
+// answers concise and use markdown formatting sparingly (short lists are fine, avoid headings).`
+
+const CHAT_SYSTEM_INSTRUCTION = `You are Sanjan's in-app note assistant. You are primarily answering questions
+about the ACTIVE NOTE provided below. You also have a list of every other note title in the user's vault. If
+the user asks about or mentions another note by name, its full content will usually already be included below
+— use it directly. Only tell the user a note isn't available if it truly isn't in the provided content. Don't
+invent content for notes you can't see. Keep answers concise and use markdown formatting sparingly.`
+
+
 
 /**
  * Stateless-per-call chat: we resend the active note + trimmed history each time,
  * which keeps this simple to wire into React state without holding a live SDK
  * chat session across renders/HMR reloads.
  */
+
+// export async function chatWithNote(
+//   activeNote: VaultNote,
+//   history: ChatMessage[],
+//   userMessage: string,
+//   allNotes: VaultNote[] = [],
+// ): Promise<string> {
+//   const trimmedHistory = history.slice(-12) // keep prompts small
+
+//   const otherNotes = allNotes.filter((n) => normalizeTitle(n.title) !== normalizeTitle(activeNote.title))
+//   const vaultBlock = otherNotes.length
+//     ? `\n\nOTHER VAULT NOTES (for context only):\n${buildVaultContext(otherNotes, 400)}`
+//     : ''
+
+//   const contents = [
+//     {
+//       role: 'user' as const,
+//       parts: [
+//         {
+//           text: `ACTIVE NOTE: "${normalizeTitle(activeNote.title)}"\n"""\n${truncate(
+//             activeNote.content,
+//             6000,
+//           )}\n"""${vaultBlock}`,
+//         },
+//       ],
+//     },
+//     {
+//       role: 'model' as const,
+//       parts: [{ text: "Understood, I'll answer questions grounded in that note." }],
+//     },
+//     ...trimmedHistory.map((m) => ({
+//       role: m.role,
+//       parts: [{ text: m.text }],
+//     })),
+//     {
+//       role: 'user' as const,
+//       parts: [{ text: userMessage }],
+//     },
+//   ]
+
+//   try {
+//     const ai = getClient()
+//     const response = await ai.models.generateContent({
+//       model: MODEL_NAME,
+//       contents,
+//       config: {
+//         systemInstruction: CHAT_SYSTEM_INSTRUCTION,
+//         temperature: 0.5,
+//       },
+//     })
+
+//     const text = response.text?.trim()
+//     if (!text) throw new GeminiServiceError('Gemini returned an empty chat response.')
+//     return text
+//   } catch (err) {
+//     await reportErrorToBackend('STUDY_NOTE', err, userMessage)
+//     if (err instanceof GeminiServiceError) throw err
+//     throw new GeminiServiceError('Failed to get a chat response from Gemini.', err)
+//   }
+// }
+
 export async function chatWithNote(
   activeNote: VaultNote,
   history: ChatMessage[],
   userMessage: string,
+  allNotes: VaultNote[] = [],
 ): Promise<string> {
-  const trimmedHistory = history.slice(-12) // keep prompts small
+  const trimmedHistory = history.slice(-12)
+
+  const otherNotes = allNotes.filter(
+    (n) => normalizeTitle(n.title) !== normalizeTitle(activeNote.title),
+  )
+  const otherTitles = otherNotes.map((n) => normalizeTitle(n.title))
+
+  const titleIndex = otherNotes.length
+    ? `\n\nOTHER NOTES IN VAULT (titles only): ${otherTitles.join(', ')}`
+    : ''
+
+  // Detect references two ways: literal [[Title]] syntax, and plain-text mentions.
+  const bracketMentions = [
+    ...extractLinkedTitles(userMessage),
+    ...extractLinkedTitles(trimmedHistory.map((m) => m.text).join('\n')),
+  ]
+  const plainMentions = findMentionedTitles(userMessage, otherTitles)
+  const referencedTitles = new Set([...bracketMentions, ...plainMentions])
+
+  const referencedNotes = otherNotes.filter((n) => referencedTitles.has(normalizeTitle(n.title)))
+
+  const referencedBlock = referencedNotes.length
+    ? `\n\nREFERENCED NOTES (full content, because the user mentioned them):\n${buildVaultContext(
+        referencedNotes,
+        3000,
+      )}`
+    : ''
 
   const contents = [
     {
@@ -498,13 +613,13 @@ export async function chatWithNote(
           text: `ACTIVE NOTE: "${normalizeTitle(activeNote.title)}"\n"""\n${truncate(
             activeNote.content,
             6000,
-          )}\n"""`,
+          )}\n"""${titleIndex}${referencedBlock}`,
         },
       ],
     },
     {
       role: 'model' as const,
-      parts: [{ text: "Understood, I'll answer questions grounded in that note." }],
+      parts: [{ text: "Understood, I'll answer questions grounded in that note and vault context." }],
     },
     ...trimmedHistory.map((m) => ({
       role: m.role,

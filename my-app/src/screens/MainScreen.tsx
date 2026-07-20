@@ -45,6 +45,7 @@ function MainScreen() {
     deleteNote,
   } = useTabContext()
 
+  const [ghostEnabled, setGhostEnabled] = useState(true);
   const activeTab = tabs.find((t) => t.id === activeTabId)
 
   // ── File sidebar context menu / rename state (unchanged from original) ──
@@ -151,20 +152,29 @@ function MainScreen() {
     GHOST_DEBOUNCE_MS,
   )
 
+  // const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  //   if (!activeTab) return
+  //   const newContent = e.target.value
+  //   updateTabContent(activeTab.id, newContent)
+  //   // Any manual edit invalidates the in-flight suggestion immediately —
+  //   // a stale ghost pointing at old text is worse than no ghost.
+  //   setGhostSuggestion(null)
+  //   requestGhostSuggestion(newContent, activeTab.title, vaultNotes)
+  // }
   const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!activeTab) return
     const newContent = e.target.value
     updateTabContent(activeTab.id, newContent)
-    // Any manual edit invalidates the in-flight suggestion immediately —
-    // a stale ghost pointing at old text is worse than no ghost.
     setGhostSuggestion(null)
-    requestGhostSuggestion(newContent, activeTab.title, vaultNotes)
+    if (ghostEnabled) {
+      requestGhostSuggestion(newContent, activeTab.title, vaultNotes)
+    }
   }
 
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (handleWikiLinkKey(e)) return
 
-    if (e.key === 'Tab' && ghostSuggestion && activeTab) {
+    if (e.key === 'Tab' && ghostEnabled && ghostSuggestion && activeTab) {
       e.preventDefault()
       const accepted = ghostSuggestion.insertText
       updateTabContent(activeTab.id, activeTab.content + accepted)
@@ -316,6 +326,7 @@ function MainScreen() {
         { title: activeTab.title, content: activeTab.content },
         chatMessages,
         userMessage,
+        vaultNotes,
       )
       setChatMessages([...nextHistory, { role: 'model', text: reply }])
     } catch (err) {
@@ -504,8 +515,30 @@ function MainScreen() {
             >
               ✦ Assistant
             </button>
+            
           )}
         </div>
+        {/* <div className="editor-toolbar">
+        {activeTab && (
+          <button
+            className={`ai-toggle-btn ${aiPanelOpen ? 'active' : ''}`}
+            onClick={() => setAIPanelOpen((prev) => !prev)}
+            title="Toggle AI panel"
+          >
+            ✦ Assistant
+          </button>
+        )}
+
+        <label style={{ marginLeft: '16px', fontSize: '13px', userSelect: 'none' }}>
+          <input
+            type="checkbox"
+            checked={ghostEnabled}
+            onChange={() => setGhostEnabled((prev) => !prev)}
+            style={{ marginRight: '6px' }}
+          />
+          Ghost Suggestion
+        </label>
+      </div> */}
 
         {activeTab ? (
           <div className="editor-wrapper">
@@ -514,7 +547,7 @@ function MainScreen() {
               {/* <span className="ghost-overlay-typed">{activeTab.content}</span> */}
               {/* <span className="ghost-overlay-typed">{renderWithWikiLinks(activeTab.content, noteTitleSet)}</span> */}
               <span className="ghost-overlay-typed">{renderContentWithMarkdown(activeTab.content, noteTitleSet, (target) => openNote(target))}</span>
-              {ghostSuggestion && (
+              {ghostEnabled && ghostSuggestion &&(
                 <span className="ghost-overlay-suggestion">{ghostSuggestion.insertText}</span>
               )}
             </div>
@@ -529,7 +562,7 @@ function MainScreen() {
               placeholder="Start typing your note here..."
               spellCheck={false}
             />
-            {(isGhostLoading || ghostSuggestion) && (
+            {ghostEnabled && (isGhostLoading || ghostSuggestion) && (
               <div className="ghost-hint">
                 {isGhostLoading ? 'Thinking…' : 'Press Tab to accept suggestion'}
               </div>
@@ -568,6 +601,19 @@ function MainScreen() {
               onClick={() => setAIPanelTab('bridge')}
             >
               Bridge
+            </button>
+             <button
+              className={`ghost-toggle-btn ${ghostEnabled ? 'active' : ''}`}
+              onClick={() => {
+                setGhostEnabled((prev) => {
+                  if (prev) setGhostSuggestion(null) // just turned off — clear stale suggestion
+                  return !prev
+                })
+              }}
+              title={ghostEnabled ? 'Disable ghost suggestions' : 'Enable ghost suggestions'}
+              style={{ marginLeft: 'auto' }}
+            >
+              {ghostEnabled ? 'On' : 'Off'}
             </button>
           </div>
 
